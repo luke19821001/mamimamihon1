@@ -2655,17 +2655,17 @@ begin
   end;
 
 
-  tmp1[0] := format('%3d', [Rscene[snum].lwc + 1]);
-  tmp2[0] := format('%3d', [Rscene[snum].zlwc + 1]);
+  tmp1[0] := format('%1d', [Rscene[snum].lwc + 1]);
+  tmp2[0] := format('%1d', [Rscene[snum].zlwc + 1]);
   strs[0] := '練武場： 個（最多 個）';
-  tmp1[1] := format('%3d', [Rscene[snum].cjg + 1]);
-  tmp2[1] := format('%3d', [Rscene[snum].zcjg + 1]);
+  tmp1[1] := format('%1d', [Rscene[snum].cjg + 1]);
+  tmp2[1] := format('%1d', [Rscene[snum].zcjg + 1]);
   strs[1] := '藏經柜： 個（最多 個）';
-  tmp1[2] := format('%3d', [Rscene[snum].bgskg]);
+  tmp1[2] := format('%1d', [Rscene[snum].bgskg]);
   strs[2] := '閉關閣： 個';
-  tmp1[3] := format('%3d', [Rscene[snum].ldlkg]);
+  tmp1[3] := format('%1d', [Rscene[snum].ldlkg]);
   strs[3] := '煉丹爐： 個';
-  tmp1[4] := format('%3d', [Rscene[snum].bqckg]);
+  tmp1[4] := format('%1d', [Rscene[snum].bqckg]);
   strs[4] := '鍛造臺： 個';
 
   strs[5] := '已經修建的設施：';
@@ -2688,9 +2688,9 @@ begin
   for i := 0 to 4 do
   begin
     DrawShadowText(@strs[i][1], x + 270, y + 258 + i * 22, ColColor($5), ColColor($7));
-    if tmp1[i] <> '' then DrawShadowText(@tmp1[i][1], x + 340, y + 256 + i * 22, ColColor($5), ColColor($7));
+    if tmp1[i] <> '' then DrawShadowText(@tmp1[i][1], x + 350, y + 256 + i * 22, ColColor($5), ColColor($7));
 
-    if tmp2[i] <> '' then DrawShadowText(@tmp2[i][1], x + 430, y + 256 + i * 22, ColColor($5), ColColor($7));
+    if tmp2[i] <> '' then DrawShadowText(@tmp2[i][1], x + 440, y + 256 + i * 22, ColColor($5), ColColor($7));
   end;
 
   if menu < 5 then
@@ -5563,16 +5563,18 @@ begin
       begin
         if Rrole[i].MenPai = mpnum2 then
         begin
+          Rrole[i].currentHP := 0;
           if (i >= 300) and (i < 500) then
           begin
             Rrole[i].HeadNum := -1;
-            Rrole[i].currentHP := 0;
+            Rrole[i].MenPai := -1;
           end
           else
           begin
             Rrole[i].nweizhi := 20;
             Rrole[i].dtime := 1000;
             Rrole[i].currentHP := 0;
+
           end;
         end;
       end;
@@ -6720,7 +6722,7 @@ begin
           if (Rmagic[Rrole[0].lmagic[k]].magictype <> 5) then
           begin
             if (Rmagic[Rrole[0].lmagic[k]].teshu[0] = 0) and ((Rmagic[Rrole[0].lmagic[k]].teshumod[0] = -1)) then
-              break;
+              continue;
             for k1 := 0 to 9 do
             begin
               if (Rmagic[Rrole[0].lmagic[k]].teshu[k1] = tneigong) and
@@ -7026,11 +7028,16 @@ begin
   if Rmenpai[Rrole[rnum].menpai].zmr = rnum then jiwei(Rrole[rnum].menpai, rnum);
   Rrole[rnum].nweizhi := 20;
   Rrole[rnum].dtime := 1000;
+  Inc(Rmenpai[Rrole[rnum].MenPai].aziyuan[3]);
   if (Rrole[rnum].menpai > 0) and (Rrole[rnum].menpai < 40) then
   begin
     for i := 0 to 9 do
     begin
       if Rmenpai[Rrole[rnum].menpai].zhiwu[i] = rnum then Rmenpai[Rrole[rnum].menpai].zhiwu[i] := -1;
+      Inc(Rmenpai[Rrole[rnum].menpai].aziyuan[0], (20 + 10 * (i div 4)) div 30);
+      Inc(Rmenpai[Rrole[rnum].menpai].aziyuan[1], (20 + 10 * (i div 4)) div 30);
+      Inc(Rmenpai[Rrole[rnum].menpai].aziyuan[2], (20 + 10 * (i div 4)) div 30);
+      Inc(Rmenpai[Rrole[rnum].menpai].aziyuan[3], (100 + 20 * (i div 4)) div 30);
     end;
   end;
 
@@ -7683,7 +7690,7 @@ begin
   if (level < 1) or (level > MAX_LEVEL) then level := 1;
   for i := 300 to 599 do
   begin
-    if Rrole[i].headNum > 0 then continue;
+    if Rrole[i].headNum >= 0 then continue;
     Rrole[i].ListNum := i;
     Rrole[i].Rtype := Rmenpai[mpnum].identity;
     if Rmenpai[mpnum].sexy in [0, 2] then
@@ -7894,19 +7901,22 @@ begin
         Rrole[i].Data[j] := min(Rrole[i].Data[j], MaxProList[j]);
       Inc(i1);
     end;
-    tmp1 := random(100) + 1;
-    tmp2 := random(100) + 1;
-    Rrole[i].swq := round(tmp1 * tmp2 / 100);
-    Rrole[i].pdq := round(tmp1 * (100 - tmp2) / 100);
-    Rrole[i].xxq := round((100 - tmp1) * tmp2 / 100);
+    tmp1 := random(101);
+    tmp2 := random(101);
+    tmp3 := random(101);
+    tmp4 := random(101);
+    Rrole[i].swq := round((tmp1 / (tmp1 + tmp2 + tmp3 + tmp4)) * 100);
+    Rrole[i].pdq := round((tmp2 / (tmp1 + tmp2 + tmp3 + tmp4)) * 100);
+    Rrole[i].xxq := round((tmp3 / (tmp1 + tmp2 + tmp3 + tmp4)) * 100);
     Rrole[i].jqq := 100 - Rrole[i].swq - Rrole[i].pdq - Rrole[i].xxq;
-    tmp1 := random(100) + 1;
-    tmp2 := random(100) + 1;
-    tmp3 := random(100) + 1;
-    Rrole[i].lwq := round(tmp1 * tmp2 / 100);
-    Rrole[i].msq := round(tmp1 * (100 - tmp2) * tmp3 / 10000);
-    Rrole[i].ldq := round(tmp1 * (100 - tmp2) * (100 - tmp3) / 10000);
-    Rrole[i].qtq := 100 - Rrole[i].lwq - 2 * Rrole[i].msq - 2 * Rrole[i].ldq;
+    tmp1 := random(101);
+    tmp2 := random(101);
+    tmp3 := random(101);
+    tmp4 := random(101);
+    Rrole[i].lwq := round((tmp1 / (tmp1 + tmp2 + tmp3 + tmp4)) * 100);
+    Rrole[i].msq := round((tmp2 / (tmp1 + tmp2 + tmp3 + tmp4)) * 100);
+    Rrole[i].ldq := round((tmp3 / (tmp1 + tmp2 + tmp3 + tmp4)) * 100);
+    Rrole[i].qtq := 100 - Rrole[i].lwq - Rrole[i].msq - Rrole[i].ldq;
 
     if x1 >= 0 then
       x50[x1] := i;
@@ -8557,6 +8567,8 @@ begin
               mpbdata[i].defmp := Rscene[snum2].menpai;
               mpbdata[i].snum := snum2;
               setlength(mpbdata[i].BTeam[1].RoleArr, 1);
+              setlength(mpbdata[i].BTeam[2].RoleArr, 0);
+              setlength(mpbdata[i].BTeam[3].RoleArr, 0);
               mpbdata[i].BTeam[1].RoleArr[0].rnum := 863 + i;
               mpbdata[i].BTeam[1].RoleArr[0].snum := Rrole[trole[i1]].weizhi;
               mpbdata[i].BTeam[1].RoleArr[0].isin := 0;
@@ -8644,6 +8656,8 @@ begin
               mpbdata[i].defmp := Rscene[snum2].menpai;
               mpbdata[i].snum := snum2;
               setlength(mpbdata[i].BTeam[1].RoleArr, 1);
+              setlength(mpbdata[i].BTeam[2].RoleArr, 0);
+              setlength(mpbdata[i].BTeam[3].RoleArr, 0);
               mpbdata[i].BTeam[1].RoleArr[0].rnum := 863 + i;
               mpbdata[i].BTeam[1].RoleArr[0].snum := Rrole[trole[i1]].weizhi;
               mpbdata[i].BTeam[1].RoleArr[0].isin := 0;
@@ -9029,7 +9043,7 @@ end;
 
 procedure showcommonscrollQingbao(x, y, w, max0, maxshow, menu, menutop: integer; tsnum: array of smallint);
 var
-  i, i1, m, Count: integer;
+  i, i1, m, Count,mpnum0: integer;
   str: WideString;
   strs: array[0..7] of WideString;
   zyname: array[0..9] of WideString;
@@ -9059,6 +9073,7 @@ begin
   DrawRectangle(x, y, w, m * 22 + 6, 0, ColColor(255), 30);
   DrawRectangle(x + w + 10, y, 500, 32, 0, ColColor(255), 30);
   DrawRectangle(x + w + 10, y + 40, 500, 350, 0, ColColor(255), 50);
+  mpnum0:=Rrole[0].menpai;
   for i := menutop to menutop + m - 1 do
   begin
     if i = menu then
@@ -9080,18 +9095,26 @@ begin
     DrawShadowText(@str[1], x + w + 80, y + 49, ColColor(0, $30), ColColor(0, $32));
 
     DrawShadowText(@strs[1][1], x + w + 250, y + 50, ColColor(0, $21), ColColor(0, $23));
-    str := format('%4d', [Rmenpai[Rscene[tsnum[menu]].menpai].guanxi[0]]);
+    str := format('%4d', [Rmenpai[Rscene[tsnum[menu]].menpai].guanxi[mpnum0]]);
+    if Rscene[tsnum[menu]].menpai = mpnum0 then
+    begin
+      str:='本門';
+    end;
     DrawShadowText(@str[1], x + w + 110 + 250, y + 49, ColColor(0, $30), ColColor(0, $32));
 
     DrawShadowText(@strs[2][1], x + w, y + 77, ColColor(0, $21), ColColor(0, $23));
     str := format('%4d', [Rscene[tsnum[menu]].zlwc + 1]);
     if Rscene[tsnum[menu]].zlwc < 0 then
-      str := '無';
+    begin
+      str := ' 無';
+    end;
     DrawShadowText(@str[1], x + w + 110, y + 76, ColColor($30), ColColor($32));
     DrawShadowText(@strs[3][1], x + w + 250, y + 77, ColColor(0, $21), ColColor(0, $23));
     str := format('%4d', [Rscene[tsnum[menu]].zcjg + 1]);
     if Rscene[tsnum[menu]].zcjg < 0 then
-      str := '無';
+    begin
+      str := ' 無';
+    end;
     DrawShadowText(@str[1], x + w + 110 + 250, y + 76, ColColor($30), ColColor($32));
 
     Count := 0;
