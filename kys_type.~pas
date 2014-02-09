@@ -10,6 +10,11 @@ uses
   inifiles;
 
 type
+  TShowTips = record
+    num:integer;
+    str:array of widestring;
+    x,y,yadd:array of smallint;
+  end;
   TRShowpic = record
     repeated,tp,pnum,x,y:smallint;
   end;
@@ -520,7 +525,7 @@ var
   blue: integer = 0;
   gray: integer = 0;
 
-  versionstr: WideString = ' v 0.490 DEBUG   '; //版本号
+  versionstr: WideString = ' v 0.504 beta   '; //版本号
   FWay: array[0..479, 0..479] of smallint;
   linex, liney: array[0..480 * 480 - 1] of smallint;
   nowstep: integer;
@@ -546,9 +551,10 @@ var
   //集氣總數
   jiqicount: integer;
   //貼士
-  tipsx, tipsy: integer;
-  tipsstring: WideString;
   tipsarr: array of WideString;
+  //显示提示暂存类型
+  ShowTips:TShowTips;
+
   Jxarr: array of WideString;
   MpBdata: array[0..19] of TMpBdata;
   mpdiaodu: array of tmpdiaodu;
@@ -585,16 +591,12 @@ var
   //50 41指令加强
   RShowpic:TRShowpic;
 
-
 const
   RMask: uint32 = $FF0000;
   GMask: uint32 = $FF00;
   BMask: uint32 = $FF;
   AMask: uint32 = $FF000000;
-  //奖励姓名
-  jlname1: string = '莊狂';
-  jlname2:array[0..1] of string = ('二一','二二');
-  jlname3:array[0..1] of string = ('三一','三二');
+
 implementation
 
 end.

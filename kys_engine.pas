@@ -1999,12 +1999,27 @@ begin
     DrawMPic(BuildArray[i].b, pos.x, pos.y);
   end;
   drawdate;
-  if (tipsstring <> '') then
+  for i:=0 to Showtips.num -1 do
   begin
-    //drawshadowtext(@tipsstring[1], tipsx , tipsy, colcolor($5), colcolor($7));
-    DrawRectangleWithoutFrame(0, tipsy - 1, screen.w, 24, 0, 30);
-    DrawText(screen, @tipsstring[1], tipsx, tipsy, ColColor($5));
+    if Showtips.y[i] < Showtips.yadd[i] then
+    begin
+      Showtips.y[i]:= Showtips.y[i] + 5;
+      if Showtips.y[i] > Showtips.yadd[i] then
+        Showtips.yadd[i]:= Showtips.yadd[i];
+    end
+    else if Showtips.y[i] > Showtips.yadd[i] then
+    begin
+      Showtips.y[i]:= Showtips.y[i] - 5;
+      if Showtips.y[i] < Showtips.yadd[i] then
+        Showtips.yadd[i]:= Showtips.yadd[i];
+    end;
+    if (Showtips.str[i] <> '') then
+    begin
+      DrawRectangleWithoutFrame(0, Showtips.y[i] - 1, screen.w, 24, 0, 30);
+      DrawText(screen, @Showtips.str[i][1], Showtips.x[i], Showtips.y[i], ColColor($5));
+    end;
   end;
+
 
 end;
 
@@ -2039,7 +2054,7 @@ end;
 
 procedure DrawScene;
 var
-  i1, i2, x, y, xpoint, ypoint: integer;
+  i, x, y, xpoint, ypoint: integer;
   dest: TSDL_Rect;
   word, worddate: WideString;
 begin
@@ -2063,13 +2078,26 @@ begin
     else DrawRoleOnScene(Cx, Cy);
   end;
   drawdate;
-  if (tipsstring <> '') then
+  for i:=0 to Showtips.num -1 do
   begin
-    //drawshadowtext(@tipsstring[1], tipsx , tipsy, colcolor($5), colcolor($7));
-    DrawRectangleWithoutFrame(0, tipsy - 1, screen.w, 24, 0, 30);
-    DrawText(screen, @tipsstring[1], tipsx, tipsy, ColColor($5));
+    if Showtips.y[i] < Showtips.yadd[i] then
+    begin
+      Showtips.y[i]:= Showtips.y[i] + 5;
+      if Showtips.y[i] > Showtips.yadd[i] then
+        Showtips.y[i]:= Showtips.yadd[i];
+    end
+    else if Showtips.y[i] > Showtips.yadd[i] then
+    begin
+      Showtips.y[i]:= Showtips.y[i] - 5;
+      if Showtips.y[i] < Showtips.yadd[i] then
+        Showtips.y[i]:= Showtips.yadd[i];
+    end;
+    if (Showtips.str[i] <> '') then
+    begin
+      DrawRectangleWithoutFrame(0, Showtips.y[i] - 1, screen.w, 24, 0, 30);
+      DrawText(screen, @Showtips.str[i][1], Showtips.x[i], Showtips.y[i], ColColor($5));
+    end;
   end;
-  //SDL_UpdateRect2(screen, 0,0,screen.w,screen.h);
   if time > 0 then
   begin
     word := formatfloat('0', time div 60) + ':' + formatfloat('00', time mod 60);

@@ -1406,7 +1406,7 @@ begin
           (event.button.y < y + 51) then
         begin
           menup := menu;
-          menu := (event.button.x - x + 67 - w div 2) div 50;
+          menu := (event.button.x - x + 47 - w div 2) div 50;
           if menu > 1 then
             menu := 1;
           if menu < 0 then
@@ -5934,7 +5934,7 @@ begin
   MPmatelist[0] := 0;
   for i := 1 to Length(Rrole) - 1 do
   begin
-    if (Rrole[i].menpai = Rrole[0].menpai) and (Rrole[i].weizhi = CurScene) then
+    if (Rrole[i].menpai = Rrole[0].menpai) and (Rrole[i].weizhi = CurScene) and (Rrole[i].dtime < 1000) then
     begin
       Inc(len);
       setlength(MPmatelist, len);
@@ -6049,11 +6049,11 @@ begin
       end;
       SDL_MOUSEMOTION:
       begin
-        if (event.button.x >= x) and (event.button.x < x + 300) and (event.button.y >= y) and
+        if (event.button.x >= x) and (event.button.x < x + 500) and (event.button.y >= y) and
           (event.button.y < 8 * 23 + y) then
         begin
           menup := menu;
-          menu := 3 * ((event.button.y - y) div 23) + ((event.button.x - x) div 100);
+          menu := 5 * ((event.button.y - y) div 23) + min(4,((event.button.x - x) div 100));
           if menu > len - 1 then menu := -1;
           if menu < 0 then menu := -1;
 

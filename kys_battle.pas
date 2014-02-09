@@ -165,7 +165,6 @@ begin
   Bstatus := 0;
   isbattle := True;
   b := 0; //于BRoleAmount是全局变量不同
-  k := 0;
   k1 := 0;
   W := WHERE;
   CurrentBattle := battlenum;
@@ -252,7 +251,7 @@ begin
     for i := 1 to length(Rrole) - 1 do
     begin
       if (((Rrole[i].menpai = Rscene[mpbdata[id].snum].menpai) and (Rrole[i].weizhi = mpbdata[id].snum) and
-        (Rrole[i].dtime < 5)) {or (Rrole[i].TeamState in [1, 2])}) then
+        (Rrole[i].dtime < 5) and (Rrole[i].CurrentHP > 0)) {or (Rrole[i].TeamState in [1, 2])}) then
       begin
         setlength(trnum, len + 1);
         trnum[len] := i;
@@ -278,17 +277,21 @@ begin
   end;
   if mods < -1 then
   begin
-
-    for i := 0 to 9 do
+    k:=0;
+    len := length(mpbdata[id].BTeam[0].rolearr);
+    for i := 0 to len - 1 do
     begin
-      if (mods = -3) and (i = 9) then
-        break;
-      len := length(mpbdata[id].BTeam[0].rolearr);
-      if i < len then
+      if ((mods = -3) and (k >= 9)) or (k > 9) then
       begin
-        Brole[BRoleAmount].rnum := mpbdata[id].BTeam[0].RoleArr[i].rnum;
-        mpbdata[id].BTeam[0].RoleArr[i].isin := 1;
+        break;
       end;
+
+      if (Rrole[mpbdata[id].BTeam[0].RoleArr[i].rnum].CurrentHP <=0) then
+      begin
+        continue;
+      end;
+      Brole[BRoleAmount].rnum := mpbdata[id].BTeam[0].RoleArr[i].rnum;
+      mpbdata[id].BTeam[0].RoleArr[i].isin := 1;
       if mods = -3 then
       begin
         if k1 = 4 then Inc(k1);
@@ -390,9 +393,12 @@ begin
         end;
       end;
       for j := 10 to 13 do
+      begin
         Brole[BRoleAmount].zhuangtai[j] := 0;
-
+      end;
+      inc(k);
       BRoleAmount := BRoleAmount + 1;
+
     end;
   end
   else
@@ -2152,24 +2158,24 @@ begin
       max0 := max0 + 1;
     end;
   end;
-  //用毒是否可用
-  if (GetRoleUsePoi(rnum, True) > 0) and (Rrole[rnum].PhyPower >= 30) then
+  //用毒是否可用   取消直接用毒
+  {if (GetRoleUsePoi(rnum, True) > 0) and (Rrole[rnum].PhyPower >= 30) then
   begin
     MenuStatus := MenuStatus or 4;
     max0 := max0 + 1;
-  end;
+  end; }
   //解毒是否可用
   if (GetRoleMedPoi(rnum, True) > 0) and (Rrole[rnum].PhyPower >= 50) then
   begin
     MenuStatus := MenuStatus or 8;
     max0 := max0 + 1;
   end;
-  //医疗是否可用
-  if (GetRoleMedcine(rnum, True) > 0) and (Rrole[rnum].PhyPower >= 50) then
+  //医疗是否可用  取消直接医疗
+  {if (GetRoleMedcine(rnum, True) > 0) and (Rrole[rnum].PhyPower >= 50) then
   begin
     MenuStatus := MenuStatus or 16;
     max0 := max0 + 1;
-  end;
+  end;  }
   //解穴是否可用
   if (Rrole[rnum].CurrentMP + (GetRoleMedcine(rnum, True) * 5) > 200) and (Rrole[rnum].PhyPower >= 50) then
   begin
@@ -3390,7 +3396,7 @@ end;
 
 procedure Attack(bnum: integer);
 var
-  rnum, i, mnum, l1, level, step, range, AttAreaType, i1, i2, twice, r1, temp,mods: integer;
+  rnum, i, mnum, l1, level, step, range, AttAreaType, i1, i2, twice, r1, temp,mods,hubo: integer;
   str: string;
   str1: WideString;
   str0: pansichar;
@@ -3497,10 +3503,17 @@ begin
       break;
     Inc(Twice);
   end;
-
+  hubo:=0;
+  if GetGongtiState(rnum,14) then
+  begin
+    if (100 - getroleaptitude(rnum,1)) > random(100) then
+    begin
+      hubo:=1;
+    end;
+  end;
   if (Brole[bnum].Acted = 1) and (Rmagic[mnum].MagicType < 5) and (Rmagic[mnum].MagicType > 0)then
   begin
-    for i1 := 0 to Rrole[rnum].Atttwice do
+    for i1 := 0 to (Rrole[rnum].Atttwice + hubo) do
     begin
       if Rmagic[mnum].NeedMP > Rrole[rnum].CurrentMP then break;
       if (i1 > 0) and (random(101) > Brole[bnum].zhuangtai[4]) then break;
@@ -3641,7 +3654,15 @@ begin
   end
   else if (Brole[bnum].Acted = 1) and (Rmagic[mnum].MagicType = 7) then
   begin
-    for i1 := 0 to Rrole[rnum].Atttwice do
+    hubo:=0;
+    if GetGongtiState(rnum,14) then
+    begin
+      if (100 - getroleaptitude(rnum,1)) > random(100) then
+      begin
+        hubo:=1;
+      end;
+    end;
+    for i1 := 0 to (Rrole[rnum].Atttwice + hubo) do
     begin
       if Rmagic[mnum].NeedMP > Rrole[rnum].CurrentMP then break;
       if (i1 > 0) and (random(101) > Brole[bnum].zhuangtai[4]) then break;
@@ -3702,7 +3723,7 @@ end;
 
 procedure AttackAction(bnum, mnum, level: integer);
 var
-  needprogress, step, range, AttAreaType, twice, t1, ax1, ay1, i, k, rnum, Aptitude, wpn: integer;
+  needprogress, step, range, AttAreaType, twice, t1, ax1, ay1, i, k, rnum, Aptitude, wpn,pzadd: integer;
   add: array[0..13] of integer;
 begin
   //if (Brole[bnum].Team = 0) and (Brole[bnum].Auto = -1) then ShowMagicName(mnum);
@@ -3811,7 +3832,10 @@ begin
     3: begin wpn := Rrole[Brole[bnum].rnum].Knife; end;
     4: begin wpn := Rrole[Brole[bnum].rnum].Unusual; end;
   end;
-  if random(2000) < ((100 + Aptitude) * (100 + Brole[bnum].zhuangtai[7]) * Brole[bnum].zhuangtai[4] * wpn) div
+  pzadd:=0;
+  if (Rrole[rnum].MPType = 1) then
+    pzadd:=200;
+  if random(2000 - pzadd) < ((100 + Aptitude) * (100 + Brole[bnum].zhuangtai[7]) * Brole[bnum].zhuangtai[4] * wpn) div
     1000000 then
   begin
     Brole[bnum].pozhao := 1;
@@ -4701,7 +4725,7 @@ end;
 procedure CalHurtRole(bnum, mnum, level: integer);
 var
   i, j1, j2, frozen, rnum, dodge, bang, hurt, addpoi, needmp, n, hurtmp, hurt1, addmpvalue,
-  addhpvalue, injury, angry, ztfytmp, fmnum, fmlev, frznum, wpn: integer;
+  addhpvalue, injury, angry, ztfytmp, fmnum, fmlev, frznum, wpn,wfadd: integer;
 begin
   dodge := 0;
   fmnum := -1;
@@ -4828,8 +4852,10 @@ begin
             end;
             if (Brole[bnum].pozhao = 1) and (wpn < 0) then
               wpn := wpn * 2;
-
-            if random(4000) < ((100 + Rrole[Brole[n].rnum].fuyuan) * (100 +
+            wfadd:=0;
+            if Rrole[Brole[n].rnum].MPType = 0 then
+              wfadd := 200;
+            if random(4000 - wfadd) < ((100 + Rrole[Brole[n].rnum].fuyuan) * (100 +
               Brole[n].zhuangtai[8] + Brole[n].zhuangtai[13] + Rrole[Brole[bnum].rnum].angry) * (100 + wpn) div 10000) then
             begin
               Brole[n].wanfang := 1;
@@ -6036,7 +6062,7 @@ begin
           additem1 := trunc(basicvalue1 * 1.5);
         end;
         Rrole[rnum].Exp := Rrole[rnum].Exp + add1 * (100 + zhiwujc6) div 100;
-        Rrole[rnum].Exp := min(Rrole[rnum].Exp, 30000);
+        Rrole[rnum].Exp := min(Rrole[rnum].Exp, 35000);
 
         //if not ((Rrole[rnum].PracticeBook >= 0) and (ritem[Rrole[rnum].PracticeBook].Magic >= 0) and (rmagic[ritem[Rrole[rnum].PracticeBook].Magic].MagicType = 5)) then
         //Rrole[rnum].GongtiExam := Rrole[rnum].GongtiExam + add1 * 2 *(100+zhiwujc6)div 500;
@@ -6104,7 +6130,7 @@ begin
           additem2 := trunc(basicvalue2 * 1.5);
         end;
         Rrole[rnum].Exp := Rrole[rnum].Exp + add2;
-        Rrole[rnum].Exp := min(Rrole[rnum].Exp, 30000);
+        Rrole[rnum].Exp := min(Rrole[rnum].Exp, 35000);
 
         //if not ((Rrole[rnum].PracticeBook >= 0) and (ritem[Rrole[rnum].PracticeBook].Magic >= 0) and (rmagic[ritem[Rrole[rnum].PracticeBook].Magic].MagicType = 5)) then
         //Rrole[rnum].GongtiExam := Rrole[rnum].GongtiExam + add2 * 2 div 5;
@@ -7381,7 +7407,7 @@ procedure AutoBattle2(bnum: integer);
 var
   i, j, j1, k, k1, tzhaoshi, tzhaoshi1, szhaoshi1, maxzhuangtai, tzhuangtai, mzhuangtai, tmnum1,
   p, a, temp, rnum, inum, eneamount, aim, mnum, l1, level, Ax1, h, Ay1, i1, i2, step, step1, dis0, dis: integer;
-  twice, r1, max2, tm, Cmnum, Cmlevel, Cmtype, Cmdis, Cmrange: integer;
+  twice, r1, max2, tm, Cmnum, Cmlevel, Cmtype, Cmdis, Cmrange,hubo: integer;
   p1, Cmnum1, Cmlevel1, Cmtype1, Cmdis1, Cmrange1: integer;
   Mmx, Mmy, Mx1, My1, tempmaxhurt, maxhurt, tempminHP: integer;
   str, str1: WideString;
@@ -7462,7 +7488,7 @@ begin
   end;
 
   //自身医疗大于60，寻找生命低于50％的队友进行医疗
-  if (Brole[bnum].Acted = 0) and (GetRoleMedcine(rnum, True) >= 60) and (Rrole[rnum].PhyPower > 50) then
+  {if (Brole[bnum].Acted = 0) and (GetRoleMedcine(rnum, True) >= 60) and (Rrole[rnum].PhyPower > 50) then
   begin
     if (Brole[bnum].Team <> 0) or ((Brole[bnum].Team = 0) and (Brole[bnum].Auto > 0)) then
     begin
@@ -7483,7 +7509,7 @@ begin
         Brole[bnum].Acted := 1;
       end;
     end;
-  end;
+  end; }
 
   //尝试攻击
   if (Brole[bnum].Acted = 0) and (Rrole[rnum].PhyPower >= 10) then
@@ -7654,8 +7680,15 @@ begin
           Brole[bnum].zhuangtai[4] div 100 then break;
         Inc(Twice);
       end;
-
-      for i1 := 0 to Rrole[rnum].AttTwice do
+      hubo:=0;
+      if GetGongtiState(rnum,14) then
+      begin
+        if (100 - getroleaptitude(rnum,1)) > random(100) then
+        begin
+          hubo:=1;
+        end;
+      end;
+      for i1 := 0 to (Rrole[rnum].AttTwice + hubo) do
       begin
         if Rmagic[Rrole[rnum].lMagic[Rrole[rnum].jhmagic[p]]].NeedMP > Rrole[rnum].CurrentMP then break;
         if (i1 > 0) and (random(101) > Brole[bnum].zhuangtai[4]) then break;
@@ -7813,7 +7846,7 @@ begin
 
 
   //自身用毒大于20，寻找敌人放毒
-  if (Brole[bnum].Acted = 0) and (GetRoleUsePoi(rnum, True) >= 20) and (Rrole[rnum].PhyPower > 30) then
+  {if (Brole[bnum].Acted = 0) and (GetRoleUsePoi(rnum, True) >= 20) and (Rrole[rnum].PhyPower > 30) then
   begin
     if (Brole[bnum].Team <> 0) or (Brole[bnum].Team = 0) then
     begin
@@ -7834,7 +7867,7 @@ begin
         //Brole[bnum].Acted := 1;
       end;
     end;
-  end;
+  end;  }
 
   //自身解毒大于20，寻找队友解毒
   if (Brole[bnum].Acted = 0) and (GetRoleMedPoi(rnum, True) >= 20) and (Rrole[rnum].PhyPower > 50) then
@@ -10229,8 +10262,8 @@ begin
     BShowBWord.words[5] := allbtalk.talk[Rrole[Brole[bnum].rnum].Sexual][1]
       [Rrole[Brole[bnum].rnum].xiangxing][random(5)];
 
-  BShowBWord.Sx[4] := sign(1 - random(4)) * (random(100) / 41 + 0.2);
-  BShowBWord.Sy[4] := random(100) / 67;
+  BShowBWord.Sx[5] := sign(1 - random(4)) * (random(100) / 41 + 0.2);
+  BShowBWord.Sy[5] := random(100) / 67;
 
   for i := 0 to length(Brole) - 1 do
   begin
@@ -10778,7 +10811,7 @@ begin
   add:=2;
   if level <= 2 then
   begin
-    add:= min(0,-1 + random(level + 2));
+    add:= max(0,-1 + random(level + 2));
   end;
   Rrole[rnum].MagLevel[rmnum] := Rrole[rnum].MagLevel[rmnum] + add;
   if CheckEquipSet(Rrole[rnum].equip[0], Rrole[rnum].equip[1], Rrole[rnum].equip[2], Rrole[rnum].equip[3]) = 2 then
@@ -10887,13 +10920,18 @@ begin
       if (gtlev + 1) <= Rmagic[Rrole[rnum].LMagic[Rrole[rnum].gongti]].MaxLevel then
       begin
         EatOneItem(rnum, Rmagic[Rrole[rnum].LMagic[Rrole[rnum].gongti]].miji, True);
+        inc(Rrole[rnum].MaxHP, Rmagic[Rrole[rnum].lmagic[Rrole[rnum].gongti]].Addhp[gtlev + 1]
+         - Rmagic[Rrole[rnum].lmagic[Rrole[rnum].gongti]].Addhp[gtlev]);
+        inc(Rrole[rnum].MaxMP, Rmagic[Rrole[rnum].lmagic[Rrole[rnum].gongti]].Addmp[gtlev + 1]
+         - Rmagic[Rrole[rnum].lmagic[Rrole[rnum].gongti]].Addmp[gtlev]);
         if Rrole[rnum].PracticeBook >= 0 then
+        begin
           if Rrole[rnum].PracticeBook = Rmagic[Rrole[rnum].LMagic[Rrole[rnum].gongti]].miji then
           begin
             instruct_32(Rrole[rnum].PracticeBook, 1);
             Rrole[rnum].PracticeBook := -1;
           end;
-
+        end;
         DrawRectangle(220, 70 - 30, 200, 25, 0, ColColor(255), 25);
         str := '升為' + IntToStr(gtlev + 2) + '級';
         str1 := GBKtoUnicode(@str[1]);

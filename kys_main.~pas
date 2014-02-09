@@ -868,11 +868,11 @@ begin
     begin
       (p0 + i)^ := (p1 + i)^;
     end;
-    if Name = '圣堂教父' then
+    if Name = '莊狂' then
       fuli := 1
-    else if (Name = '邱百川') or (name ='')  then
+    else if (Name = '中路殺神') or (name ='西門小慶')  then
       fuli := 2
-    else if (Name = '冷傲天') or (Name = '天涯') or (Name = '修羅') then
+    else if (Name = '星空') or (Name = '無鋒') then
       fuli := 3;
     Redraw;
     Result := RandomAttribute;
@@ -1026,6 +1026,7 @@ var
   tmp1: smallint;
 begin
   RStishi.num := 0;
+  ShowTips.num:=0;
   SaveNum := num;
   filename := 'R' + IntToStr(num);
   filename1 := 'save\' + 'R' + IntToStr(num) + '.grp';
@@ -1442,8 +1443,6 @@ begin
   loadrenwus;
   if battlemode > 2 then battlemode := 2;
   MAX_LEVEL := 30;
-  tipsx := -200;
-  tipsy := CENTER_Y * 2 - 40;
 
 end;
 
@@ -1675,13 +1674,16 @@ begin
     now := SDL_GetTicks;
     if (integer(now) - integer(before) > 40) then
     begin
-      if tipsx < -400 then
+      settips;
+      for i:= 0 to Showtips.num -1 do
       begin
-        tipsstring := gettips;
-        tipsx := CENTER_X * 2;
-      end
-      else
-        Dec(tipsx, 10);
+        if Showtips.x[i] < -400 then
+        begin
+          dectips(i);
+        end
+        else
+          Dec(Showtips.x[i], 10);
+      end;
       before := now;
       isdraw := True;
       //DrawMMap;
@@ -2218,7 +2220,7 @@ begin
   begin
     for i := 0 to 19 do
     begin
-      if (mpbdata[i].key >= 0) and (mpbdata[i].snum = curscene) and (timetonum > mpbdata[i].daytime) then
+      if (mpbdata[i].key >= 0) and (mpbdata[i].snum = curscene) and (timetonum >= mpbdata[i].daytime) then
       begin
         NewTalk(0, 205, -2, 0, 0, 0, 0, 1);
         timetompbattle(i, 1);
@@ -2277,13 +2279,16 @@ begin
     else if (integer(now) - integer(before) > 40) then
     begin
       ChangeCol;
-      if tipsx < -400 then
+      settips;
+      for i:= 0 to Showtips.num -1 do
       begin
-        tipsstring := gettips;
-        tipsx := CENTER_X * 2;
-      end
-      else
-        Dec(tipsx, 10);
+        if Showtips.x[i] < -400 then
+        begin
+          dectips[i];
+        end
+        else
+          Dec(Showtips.x[i], 10);
+      end;
       if (integer(now) - integer(next_time) > 0) then
       begin
         if (water >= 0) then
@@ -5624,7 +5629,8 @@ begin
       end;
       116:
       begin
-        aotobuildrole(e[i + 1], e[i + 2], e[i + 3], e[i + 4]);
+        if (aotobuildrole(e[i + 1], e[i + 2], e[i + 3], e[i + 4]))<=0 then
+          break;
         i := i + 5;
       end;
       117:

@@ -59,6 +59,8 @@ procedure ShengWangAndLevSort(var arr: array of integer);
 //ÙNÊ¿
 function gettips: WideString;
 procedure addtips(str: WideString);
+procedure settips;
+procedure dectips(num:integer);
 //¼´Î»ÅÅÐò
 procedure jiweiSort(var arr: array of integer; big: integer);
 procedure Jxtips;
@@ -385,7 +387,7 @@ begin
   end;
   for i := 0 to 19 do
   begin
-    if mpbdata[i].key >= 0 then
+    if (mpbdata[i].key >= 0) and (mpbdata[i].daytime <> -1) then
     begin
       if (t >= mpbdata[i].daytime) then
       begin
@@ -424,6 +426,7 @@ begin
     if RccRole.adds[i].Dtime <= t then
     begin
       instruct_3([RccRole.adds[i].snum, RccRole.adds[i].DNum, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+      Ddata[RccRole.adds[i].snum,RccRole.adds[i].DNum,1]:=-1;
       Rrole[RccRole.adds[i].rnum].lsweizhi := -1;
       Rrole[RccRole.adds[i].rnum].lsnweizhi := -1;
       Rrole[RccRole.adds[i].rnum].lsfangxiang := 0;
@@ -530,7 +533,7 @@ begin
       if (Rrole[i].nweizhi >= 0) and (Rrole[i].nweizhi <= 4) then
       begin
         Inc(Rrole[i].exp, round((Rrole[i].level * 2 + 20) * (100 + random(100)) * (100 + zhiwujc6) / 25000));
-        Rrole[i].Exp := min(Rrole[i].Exp, 50000);
+        Rrole[i].Exp := min(Rrole[i].Exp, 35000);
         Inc(Rrole[i].ExpForBook, round((Rrole[i].level * 2 + 20) * (100 + random(100)) *
           (100 + zhiwujc6) * 4 / 125000));
         Rrole[i].ExpForBook := min(Rrole[i].ExpForBook, 30000);
@@ -670,7 +673,7 @@ begin
           if (random(200) >= Rrole[i].msq) and (Rrole[i].lmagic[0] < 1) then
           begin
             Inc(Rrole[i].exp, round((Rrole[i].level * 4 + 40) * (100 + random(100)) * (100 + zhiwujc6) / 25000));
-            Rrole[i].Exp := min(Rrole[i].Exp, 50000);
+            Rrole[i].Exp := min(Rrole[i].Exp, 35000);
 
           end
           else
@@ -809,7 +812,7 @@ begin
               if (Rmagic[Rrole[i].lmagic[k]].magictype <> 5) then
               begin
                 if (Rmagic[Rrole[i].lmagic[k]].teshu[0] = 0) and ((Rmagic[Rrole[i].lmagic[k]].teshumod[0] = -1)) then
-                  break;
+                  continue;
                 for k1 := 0 to 9 do
                 begin
                   if (Rmagic[Rrole[i].lmagic[k]].teshu[k1] = tneigong) and
@@ -952,7 +955,7 @@ begin
       db3 := mpzyjc(mpnum) * 30 * 8 / Rmenpai[mpnum].dizi;
       db4 := db1 * db2 * db3 / 250000000;
       Inc(Rrole[i].exp, round(db4));
-      Rrole[i].Exp := min(Rrole[i].Exp, 50000);
+      Rrole[i].Exp := min(Rrole[i].Exp, 35000);
 
       while (Rrole[i].Level < MAX_LEVEL) and (uint16(Rrole[i].Exp) >= uint16(LevelUplist[Rrole[i].Level - 1])) do
       begin
@@ -1131,6 +1134,8 @@ begin
             if Rrole[i].lmagic[k] <= 0 then break;
             if (Rmagic[Rrole[i].lmagic[k]].magictype <> 5) then
             begin
+              if (Rmagic[Rrole[i].lmagic[k]].teshu[0] = 0) and ((Rmagic[Rrole[i].lmagic[k]].teshumod[0] = -1)) then
+                continue;
               for k1 := 0 to 9 do
               begin
                 if (Rmagic[Rrole[i].lmagic[k]].teshu[k1] = tneigong) and
@@ -1953,6 +1958,71 @@ begin
 
 end;
 
+procedure settips;
+var
+  i:integer;
+  tipsstring:widestring;
+begin
+  if Showtips.num >= 5 then
+    exit;
+  tipsstring := gettips;
+  if (tipsstring <> '') and (Showtips.num < 5) then
+  begin
+    inc(Showtips.num);
+    setlength(Showtips.Str,Showtips.num);
+    Showtips.Str[Showtips.num -1]:= tipsstring;
+    setlength(Showtips.x,Showtips.num);
+    Showtips.x[Showtips.num -1]:= CENTER_X * 2 + 50;
+    setlength(Showtips.y,Showtips.num);
+    if Showtips.num > 1 then
+      Showtips.y[Showtips.num -1]:= Showtips.y[Showtips.num -2]
+    else
+      Showtips.y[Showtips.num -1]:= CENTER_Y * 2 - 40;
+    setlength(Showtips.yadd,Showtips.num);
+    Showtips.yadd[Showtips.num -1]:= Showtips.y[Showtips.num -1];
+    for i:= Showtips.num - 2 downto 0 do
+    begin
+      Showtips.yadd[i]:= Showtips.yadd[i + 1] - 25;
+    end;
+  end;
+end;
+
+procedure dectips(num:integer);
+var
+  i:integer;
+  tipsstring:widestring;
+begin
+  tipsstring := gettips;
+  if (tipsstring <> '') and (num < Showtips.num) then
+  begin
+    Showtips.Str[num]:= tipsstring;
+    Showtips.x[num]:= CENTER_X * 2 + 50;
+  end
+  else if (tipsstring = '') then
+  begin
+    for i:= num to Showtips.num -2 do
+    begin
+      Showtips.Str[i]:= Showtips.Str[i + 1];
+      Showtips.x[i]:= Showtips.x[i + 1];
+      Showtips.y[i]:= Showtips.y[i + 1];
+      Showtips.yadd[i]:= Showtips.yadd[i + 1];
+    end;
+    dec(Showtips.num);
+    setlength(Showtips.Str,Showtips.num);
+    setlength(Showtips.x,Showtips.num);
+    setlength(Showtips.y,Showtips.num);
+    setlength(Showtips.yadd,Showtips.num);
+    if num > Showtips.num then
+    begin
+      exit;
+    end;
+    for i:= 0 to num -1 do
+    begin
+      Showtips.yadd[i]:= Showtips.yadd[i] + 25;
+    end;
+  end;
+end;
+
 procedure addtips(str: WideString);
 var
   i, k: integer;
@@ -2610,6 +2680,35 @@ begin
     if Rrole[mpbdata[id].BTeam[3].rolearr[i].rnum].CurrentHP > 0 then
       Inc(l3);
   end;
+  if (l2 < 1) and (l3 < 1) then
+  begin
+    mpbdata[id].key := -1;
+    Rscene[mpbdata[id].snum].inbattle := 0;
+    for i2 := 0 to len2 - 1 do
+    begin
+      if Rrole[mpbdata[id].BTeam[2].RoleArr[i2].rnum].menpai >= 0 then
+        Rrole[mpbdata[id].BTeam[2].RoleArr[i2].rnum].weizhi := mpbdata[id].BTeam[2].RoleArr[i2].snum;
+      Rrole[mpbdata[id].BTeam[2].RoleArr[i2].rnum].dtime := 5;
+      if Rrole[mpbdata[id].BTeam[2].RoleArr[i2].rnum].TeamState in [1, 2] then
+      begin
+        Rrole[mpbdata[id].BTeam[2].RoleArr[i2].rnum].nweizhi := 13;
+        Rrole[mpbdata[id].BTeam[2].RoleArr[i2].rnum].dtime := 1000;
+      end
+      else
+        Rrole[mpbdata[id].BTeam[2].RoleArr[i2].rnum].nweizhi := -1;
+    end;
+    for i2 := 0 to len3 - 1 do
+    begin
+      Rrole[mpbdata[id].BTeam[3].RoleArr[i2].rnum].nweizhi := -1;
+      Rrole[mpbdata[id].BTeam[3].RoleArr[i2].rnum].dtime := 0;
+    end;
+    str := gbktounicode(@Rmenpai[mpbdata[id].defmp].Name);
+    str := str + 'ÔÚ' + gbktounicode(@Rscene[mpbdata[id].snum].Name);
+    str := str + '‘ð„Ù' + gbktounicode(@Rmenpai[mpbdata[id].attmp].Name);
+    addtips(str);
+    exit;
+
+  end;
   for i := 0 to len3 - 1 do
   begin
     if mpbdata[id].BTeam[3].rolearr[i].mag >= 0 then
@@ -2835,8 +2934,10 @@ begin
 
   for i := 0 to length(Rrole) - 1 do
   begin
-    if Rrole[i].dtime > 999 then
+    if (Rrole[i].headNum < 0) or ((Rrole[i].dtime >= 1000) and ((Rrole[i].nweizhi = 16) or (Rrole[i].nweizhi = 20))) then
+    begin
       continue;
+    end;
     hx := Rrole[i].rehurt;
     Rrole[i].CurrentHP := max(1, min(Rrole[i].CurrentHP + Rrole[i].MaxHP div 20 +
       (Rrole[i].MaxHP - Rrole[i].CurrentHP) div 20 - (Rrole[i].Hurt + Rrole[i].Poision) *

@@ -141,7 +141,8 @@ uses
 
 procedure Run;
 var
-  title: string;
+  tmp:widestring;
+  title:UTF8String;
 begin
 {$IFDEF UNIX}
   AppPath := ExtractFilePath(ParamStr(0));
@@ -184,8 +185,10 @@ begin
   //InitalMusic;
   //SDL_Init(SDL_INIT_AUDIO);
   //Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 8192);
+  versionstr:= gbktounicode('v 0.506 beta ¼×ÎçÄêÐÂ´ºÌØ„e°æ  ');
+  tmp:='In Stories '+versionstr;
+  title:=utf8encode(tmp);
   SDL_WM_SetIcon(IMG_Load('resource\icon'), 0);
-  title := 'In storys' + versionstr;
 
   SDL_WM_SetCaption(@title[1], 's.weyl¡¢killer-G¡¢luke19821001');
 
@@ -577,7 +580,7 @@ begin
   //  PlayBeginningMovie(0, -1);
   //PlayMpeg();
   display_imgfromSurface(BEGIN_PIC, 0, 0);
-  DrawEngShadowText(@versionstr[1], CENTER_X - 320, CENTER_Y - 200, ColColor($63), ColColor($66));
+  DrawShadowText(@versionstr[1], CENTER_X - 320, CENTER_Y - 200, ColColor($63), ColColor($66));
   MStep := 0;
   // fullscreen := 0;
   where := 3;
@@ -720,7 +723,7 @@ begin
       PlayMP3(114, -1);
       SDL_EventState(SDL_MOUSEMOTION, SDL_ENABLE);
       display_imgfromSurface(BEGIN_PIC, 0, 0);
-      DrawEngShadowText(@versionstr[1], CENTER_X - 320, CENTER_Y - 200, ColColor($63), ColColor($66));
+      DrawShadowText(@versionstr[1], CENTER_X - 320, CENTER_Y - 200, ColColor($63), ColColor($66));
       MStep := 0;
       DrawTitlePic(0, x, y);
       DrawTitlePic(menu + 1, x + 12, y + 10 + menu * 23);
@@ -1026,6 +1029,7 @@ var
   tmp1: smallint;
 begin
   RStishi.num := 0;
+  ShowTips.num:=0;
   SaveNum := num;
   filename := 'R' + IntToStr(num);
   filename1 := 'save\' + 'R' + IntToStr(num) + '.grp';
@@ -1442,8 +1446,6 @@ begin
   loadrenwus;
   if battlemode > 2 then battlemode := 2;
   MAX_LEVEL := 30;
-  tipsx := -200;
-  tipsy := CENTER_Y * 2 - 40;
 
 end;
 
@@ -1675,13 +1677,18 @@ begin
     now := SDL_GetTicks;
     if (integer(now) - integer(before) > 40) then
     begin
-      if tipsx < -400 then
+      settips;
+      for i:= 0 to Showtips.num -1 do
       begin
-        tipsstring := gettips;
-        tipsx := CENTER_X * 2;
-      end
-      else
-        Dec(tipsx, 10);
+        if Showtips.x[i] < -400 then
+        begin
+          dectips(i);
+        end
+        else
+        begin
+          Dec(Showtips.x[i], 10);
+        end;
+      end;
       before := now;
       isdraw := True;
       //DrawMMap;
@@ -2277,13 +2284,18 @@ begin
     else if (integer(now) - integer(before) > 40) then
     begin
       ChangeCol;
-      if tipsx < -400 then
+      settips;
+      for i:= 0 to Showtips.num -1 do
       begin
-        tipsstring := gettips;
-        tipsx := CENTER_X * 2;
-      end
-      else
-        Dec(tipsx, 10);
+        if Showtips.x[i] < -400 then
+        begin
+          dectips(i);
+        end
+        else
+        begin
+          Dec(Showtips.x[i], 10);
+        end;
+      end;
       if (integer(now) - integer(next_time) > 0) then
       begin
         if (water >= 0) then
@@ -5624,7 +5636,8 @@ begin
       end;
       116:
       begin
-        aotobuildrole(e[i + 1], e[i + 2], e[i + 3], e[i + 4]);
+        if (aotobuildrole(e[i + 1], e[i + 2], e[i + 3], e[i + 4]))<=0 then
+          break;
         i := i + 5;
       end;
       117:

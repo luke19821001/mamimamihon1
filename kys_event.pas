@@ -124,6 +124,7 @@ function GetRoleMedPoi(rnum: integer; Equip: boolean): integer;
 function GetRoleMedcine(rnum: integer; Equip: boolean): integer;
 function GetRoleAttPoi(rnum: integer; Equip: boolean): integer;
 function CheckEquipSet(e0, e1, e2, e3: integer): integer;
+function GetRoleAptitude(rnum,mods:integer):integer;
 //procedure StudyGongti;
 //procedure ShowStudyGongti(menu, menu2, max0: integer);
 //function StadyGongtiMenu(x, y, w: integer): integer;
@@ -924,8 +925,8 @@ procedure instruct_30(y1, x1, y2, x2: integer);
 var
   i, a, i1: integer;
 begin
-  if x1 = -2 then x1 := Sy;
-  if y1 = -2 then y1 := Sx;
+  if x1 = -2 then x1 := Sx;
+  if y1 = -2 then y1 := Sy;
   nowstep := -1;
   for i := 0 to 63 do
     for i1 := 0 to 63 do
@@ -1554,7 +1555,13 @@ begin
         Rrole[rnum].PracticeBook := -1;
       end;
       Rrole[rnum].TeamState := 3;
+      Rrole[rnum].dtime:=random(5);
+      Rrole[rnum].nweizhi:=14;
       Dec(teamcount);
+      if Rrole[rnum].leaveevent > 0 then
+      begin
+        CallEvent(Rrole[rnum].leaveevent);
+      end;
     end;
   end;
 end;
@@ -2341,7 +2348,7 @@ begin
           if Rrole[e3].lmagic[i] > 0 then
             if Rmagic[Rrole[e3].lmagic[i]].MagicType <> 5 then
             begin
-              Rrole[e3].lmagic[i] := -1;
+              Rrole[e3].lmagic[i] := 0;
               Rrole[e3].MagLevel[i] := 0;
             end;
         for i := 28 downto 0 do
@@ -2353,7 +2360,7 @@ begin
               Rrole[e3].MagLevel[i1] := Rrole[e3].MagLevel[i1 + 1];
             end;
           end;
-        Rrole[e3].lmagic[29] := -1;
+        Rrole[e3].lmagic[29] := 0;
         Rrole[e3].MagLevel[29] := 0;
       end
       else if e2 = -17 then //恢复武功
@@ -2848,6 +2855,13 @@ begin
 
 end;
 
+function GetRoleAptitude(rnum,mods:integer):integer;
+begin
+  if (mods = 0) and (CheckEquipSet(Rrole[rnum].equip[0], Rrole[rnum].equip[1], Rrole[rnum].equip[2], Rrole[rnum].equip[3]) = 2) then
+    result := 100
+  else result := Rrole[rnum].Aptitude;
+
+end;
 
 function GetGongtiState(person, state: integer): boolean;
 var
@@ -2904,8 +2918,8 @@ begin
     if (Rrole[person].Equip[i] >= 0) and (Ritem[Rrole[person].Equip[i]].BattleEffect = state) then
       Result := True;
 end;
-//重写的学会武功
 
+//重写的学会武功
 procedure StudyMagic(rnum, magicnum, newmagicnum, level, dismode: integer);
 var
   i, n: integer;
@@ -2924,7 +2938,7 @@ begin
           Rrole[rnum].lMagic[n] := Rrole[rnum].lMagic[n + 1];
           Rrole[rnum].MagLevel[n] := Rrole[rnum].MagLevel[n + 1];
         end;
-        Rrole[rnum].lMagic[29] := -1;
+        Rrole[rnum].lMagic[29] := 0;
         Rrole[rnum].MagLevel[29] := 0;
         break;
       end;
@@ -2947,7 +2961,7 @@ begin
     if n = 0 then
       for i := 0 to 29 do
       begin
-        if (Rrole[rnum].lMagic[i] = magicnum) then //老武功替换为新武功
+        if (Rrole[rnum].lMagic[i] = magicnum) or (Rrole[rnum].lMagic[i] < 0) then //老武功替换为新武功
         begin
           if level <> -2 then Rrole[rnum].MagLevel[i] := level;
           Rrole[rnum].lMagic[i] := newmagicnum;
@@ -2956,7 +2970,7 @@ begin
       end;
     for i := 0 to 29 do
     begin
-      if (magicnum > 0) and (Rrole[rnum].lMagic[i] <= 0) then //老武功替换为新武功并升级
+      if (magicnum > 0) and (Rrole[rnum].lMagic[i] <= 0) then //学会武功并设置等级
       begin
         Rrole[rnum].lMagic[i] := magicnum;
         if level = -2 then level := 0;
@@ -3107,15 +3121,17 @@ begin
 
     namelen := (namelen - offset);
 
-    setlength(namearray, namelen + 1);
+    setlength(namearray, namelen + 2);
     FileSeek(grp, offset, 0);
     FileRead(grp, namearray[0], namelen);
     FileClose(idx);
     FileClose(grp);
-    for i := 0 to namelen - 2 do
+    for i := 0 to namelen - 1 do
     begin
       namearray[i] := namearray[i] xor $FF;
     end;
+    namearray[namelen]:=byte(0);
+    namearray[namelen + 1]:=byte(0);
     np := @namearray[0];
   end
   else if namenum = -2 then
@@ -3133,8 +3149,8 @@ begin
           (np + n)^ := (p1 + n)^;
           if (p1 + n)^ = char(0) then break;
         end;
-        (np + n)^ := char(0);
-        (np + n + 1)^ := char(0);
+        (np + namelen - 2)^ := char(0);
+        (np + namelen - 1)^ := char(0);
         break;
       end;
     end;
