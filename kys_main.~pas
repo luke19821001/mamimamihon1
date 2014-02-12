@@ -141,7 +141,8 @@ uses
 
 procedure Run;
 var
-  title: string;
+  tmp:widestring;
+  title:UTF8String;
 begin
 {$IFDEF UNIX}
   AppPath := ExtractFilePath(ParamStr(0));
@@ -184,8 +185,10 @@ begin
   //InitalMusic;
   //SDL_Init(SDL_INIT_AUDIO);
   //Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 8192);
+  versionstr:= gbktounicode('v 0.506 beta ¼×ÎçÄêÐÂ´ºÌØ„e°æ  ');
+  tmp:='In Stories '+versionstr;
+  title:=utf8encode(tmp);
   SDL_WM_SetIcon(IMG_Load('resource\icon'), 0);
-  title := 'In storys' + versionstr;
 
   SDL_WM_SetCaption(@title[1], 's.weyl¡¢killer-G¡¢luke19821001');
 
@@ -577,7 +580,7 @@ begin
   //  PlayBeginningMovie(0, -1);
   //PlayMpeg();
   display_imgfromSurface(BEGIN_PIC, 0, 0);
-  DrawEngShadowText(@versionstr[1], CENTER_X - 320, CENTER_Y - 200, ColColor($63), ColColor($66));
+  DrawShadowText(@versionstr[1], CENTER_X - 320, CENTER_Y - 200, ColColor($63), ColColor($66));
   MStep := 0;
   // fullscreen := 0;
   where := 3;
@@ -720,7 +723,7 @@ begin
       PlayMP3(114, -1);
       SDL_EventState(SDL_MOUSEMOTION, SDL_ENABLE);
       display_imgfromSurface(BEGIN_PIC, 0, 0);
-      DrawEngShadowText(@versionstr[1], CENTER_X - 320, CENTER_Y - 200, ColColor($63), ColColor($66));
+      DrawShadowText(@versionstr[1], CENTER_X - 320, CENTER_Y - 200, ColColor($63), ColColor($66));
       MStep := 0;
       DrawTitlePic(0, x, y);
       DrawTitlePic(menu + 1, x + 12, y + 10 + menu * 23);
@@ -1682,7 +1685,9 @@ begin
           dectips(i);
         end
         else
+        begin
           Dec(Showtips.x[i], 10);
+        end;
       end;
       before := now;
       isdraw := True;
@@ -2284,10 +2289,12 @@ begin
       begin
         if Showtips.x[i] < -400 then
         begin
-          dectips[i];
+          dectips(i);
         end
         else
+        begin
           Dec(Showtips.x[i], 10);
+        end;
       end;
       if (integer(now) - integer(next_time) > 0) then
       begin

@@ -327,6 +327,10 @@ begin
     if (Rrole[i].dtime < 1000) and (Rrole[i].dtime > 0) then
     begin
       Dec(Rrole[i].dtime);
+      if rrole[i].dtime <=0 then
+      begin
+        rrole[i].nweizhi:=-1;
+      end;
       if (Rrole[i].dtime <= 0) and (Rrole[i].MenPai > 0) and
        (Rscene[Rrole[i].weizhi].menpai <> Rrole[i].MenPai) and (Rmenpai[Rrole[i].MenPai].zongduo > 0) then
       begin

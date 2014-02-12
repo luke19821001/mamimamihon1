@@ -1555,6 +1555,8 @@ begin
         Rrole[rnum].PracticeBook := -1;
       end;
       Rrole[rnum].TeamState := 3;
+      Rrole[rnum].dtime:=random(5);
+      Rrole[rnum].nweizhi:=14;
       Dec(teamcount);
     end;
   end;
@@ -3124,8 +3126,8 @@ begin
     begin
       namearray[i] := namearray[i] xor $FF;
     end;
-    namearray[namelen]:=char(0);
-    namearray[namelen + 1]:=char(0);
+    namearray[namelen]:=byte(0);
+    namearray[namelen + 1]:=byte(0);
     np := @namearray[0];
   end
   else if namenum = -2 then

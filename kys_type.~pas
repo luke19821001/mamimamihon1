@@ -525,7 +525,7 @@ var
   blue: integer = 0;
   gray: integer = 0;
 
-  versionstr: WideString = ' v 0.504 beta   '; //°æ±¾ºÅ
+  versionstr: WideString; //°æ±¾ºÅ
   FWay: array[0..479, 0..479] of smallint;
   linex, liney: array[0..480 * 480 - 1] of smallint;
   nowstep: integer;

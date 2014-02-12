@@ -298,7 +298,6 @@ var
   CHINESE_FONT_SIZE: integer = 20;
   ENGLISH_FONT: PAnsiChar = 'resource\English.ttf';
   ENGLISH_FONT_SIZE: integer = 18;
-  CHINESE_FONT_SONGTI: PAnsiChar = 'resource\Chinese.ttc';
   CHINESE_FONT2_SIZE: integer = 18;
   ENGLISH_FONT2_SIZE: integer = 16;
   CENTER_X: integer = 320;

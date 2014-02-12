@@ -327,6 +327,10 @@ begin
     if (Rrole[i].dtime < 1000) and (Rrole[i].dtime > 0) then
     begin
       Dec(Rrole[i].dtime);
+      if rrole[i].dtime <=0 then
+      begin
+        rrole[i].nweizhi:=-1;
+      end;
       if (Rrole[i].dtime <= 0) and (Rrole[i].MenPai > 0) and
        (Rscene[Rrole[i].weizhi].menpai <> Rrole[i].MenPai) and (Rmenpai[Rrole[i].MenPai].zongduo > 0) then
       begin
@@ -519,6 +523,10 @@ begin
   mpnum := Rrole[0].menpai;
   for i := 0 to length(Rrole) - 1 do
   begin
+    if Rrole[i].dtime <=0 then
+    begin
+      continue;
+    end;
     if Rrole[i].menpai = mpnum then
     begin
       if Rmenpai[mpnum].zhiwu[9] >= 0 then
@@ -2681,7 +2689,34 @@ begin
       Inc(l3);
   end;
   if (l2 < 1) and (l3 < 1) then
+  begin
+    mpbdata[id].key := -1;
+    Rscene[mpbdata[id].snum].inbattle := 0;
+    for i2 := 0 to len2 - 1 do
+    begin
+      if Rrole[mpbdata[id].BTeam[2].RoleArr[i2].rnum].menpai >= 0 then
+        Rrole[mpbdata[id].BTeam[2].RoleArr[i2].rnum].weizhi := mpbdata[id].BTeam[2].RoleArr[i2].snum;
+      Rrole[mpbdata[id].BTeam[2].RoleArr[i2].rnum].dtime := 5;
+      if Rrole[mpbdata[id].BTeam[2].RoleArr[i2].rnum].TeamState in [1, 2] then
+      begin
+        Rrole[mpbdata[id].BTeam[2].RoleArr[i2].rnum].nweizhi := 13;
+        Rrole[mpbdata[id].BTeam[2].RoleArr[i2].rnum].dtime := 1000;
+      end
+      else
+        Rrole[mpbdata[id].BTeam[2].RoleArr[i2].rnum].nweizhi := -1;
+    end;
+    for i2 := 0 to len3 - 1 do
+    begin
+      Rrole[mpbdata[id].BTeam[3].RoleArr[i2].rnum].nweizhi := -1;
+      Rrole[mpbdata[id].BTeam[3].RoleArr[i2].rnum].dtime := 0;
+    end;
+    str := gbktounicode(@Rmenpai[mpbdata[id].defmp].Name);
+    str := str + 'ÔÚ' + gbktounicode(@Rscene[mpbdata[id].snum].Name);
+    str := str + '‘ð„Ù' + gbktounicode(@Rmenpai[mpbdata[id].attmp].Name);
+    addtips(str);
+    exit;
 
+  end;
   for i := 0 to len3 - 1 do
   begin
     if mpbdata[id].BTeam[3].rolearr[i].mag >= 0 then

@@ -1970,6 +1970,10 @@ end;
 function xingdongstr(rnum: integer): WideString;
 begin
   Result := '未行動';
+  if Rrole[rnum].dtime <= 0 then
+  begin
+    exit;
+  end;
   case Rrole[rnum].nweizhi of
 
     0..4: Result := '練武';
@@ -3566,6 +3570,8 @@ begin
 
   strs[0] := '內功';
   strs[1] := '————————————門派內功————————————';
+  strs[2] := '門派內功必須擁有秘笈才能設定';
+  strs[3] := '只有設定為門派內功方可能在閉關時融會貫通';
   k := 0;
   for i := 0 to 19 do
   begin
@@ -3573,9 +3579,12 @@ begin
     names[k] := GBKtounicode(@Rmagic[Rmenpai[mpnum].neigong[i]].Name);
     Inc(k);
   end;
+  k := min(19,k);
   display_imgFromSurface(MPNeigong_PIC.pic, 0, 0);
   DrawRectangle(x, y, 610, 380, 0, ColColor(255), 30);
   DrawShadowText(@strs[1][1], x + 15, y + 20, ColColor(249), ColColor(252));
+  DrawShadowText(@strs[2][1], x - 10, y + 335,18, ColColor(5), ColColor(7));
+  DrawShadowText(@strs[3][1], x - 10, y + 357,18, ColColor(5), ColColor(7));
   for i := 0 to k do
   begin
     DrawRectangle(x + 10 + 120 * (i mod 5), y + 60 + 70 * (i div 5), 95, 24, ColColor(5), ColColor(255), 50);
@@ -3584,8 +3593,7 @@ begin
     if menu = i then DrawRectangle(x + 10 + 120 * (i mod 5), y + 90 + 70 * (i div 5), 95, 24,
         ColColor(64), ColColor(68), 50)
     else DrawRectangle(x + 10 + 120 * (i mod 5), y + 90 + 70 * (i div 5), 95, 24, ColColor(192), ColColor(255), 50);
-    if i < k then DrawShadowText(@names[i][1], x + 1 + 120 * (i mod 5) + (95 - length(names[i]) * 20) div
-        2, y + 90 + 70 * (1 div 5), ColColor($5), ColColor($7));
+    if i < k then DrawShadowText(@names[i][1], x + 10 + 120 * (i mod 5) + (30 - length(names[i]) * 9), y + 91 + 70 * (i div 5),18, ColColor($5), ColColor($7));
   end;
 
 end;
@@ -7033,11 +7041,14 @@ begin
   begin
     for i := 0 to 9 do
     begin
-      if Rmenpai[Rrole[rnum].menpai].zhiwu[i] = rnum then Rmenpai[Rrole[rnum].menpai].zhiwu[i] := -1;
-      Inc(Rmenpai[Rrole[rnum].menpai].aziyuan[0], (20 + 10 * (i div 4)) div 30);
-      Inc(Rmenpai[Rrole[rnum].menpai].aziyuan[1], (20 + 10 * (i div 4)) div 30);
-      Inc(Rmenpai[Rrole[rnum].menpai].aziyuan[2], (20 + 10 * (i div 4)) div 30);
-      Inc(Rmenpai[Rrole[rnum].menpai].aziyuan[3], (100 + 20 * (i div 4)) div 30);
+      if Rmenpai[Rrole[rnum].menpai].zhiwu[i] = rnum then
+      begin
+        Rmenpai[Rrole[rnum].menpai].zhiwu[i] := -1;
+        Inc(Rmenpai[Rrole[rnum].menpai].aziyuan[0], (20 + 10 * (i div 4)) div 30);
+        Inc(Rmenpai[Rrole[rnum].menpai].aziyuan[1], (20 + 10 * (i div 4)) div 30);
+        Inc(Rmenpai[Rrole[rnum].menpai].aziyuan[2], (20 + 10 * (i div 4)) div 30);
+        Inc(Rmenpai[Rrole[rnum].menpai].aziyuan[3], (100 + 20 * (i div 4)) div 30);
+      end;
     end;
   end;
 

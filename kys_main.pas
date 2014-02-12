@@ -160,7 +160,7 @@ begin
   TTF_Init();
   font := TTF_OpenFont(CHINESE_FONT, CHINESE_FONT_SIZE);
   engfont := TTF_OpenFont(ENGLISH_FONT, ENGLISH_FONT_SIZE);
-  font2 := TTF_OpenFont(CHINESE_FONT_SONGTI, CHINESE_FONT2_SIZE);
+  font2 := TTF_OpenFont(CHINESE_FONT, CHINESE_FONT2_SIZE);
   engfont2 := TTF_OpenFont(ENGLISH_FONT, ENGLISH_FONT2_SIZE);
   if font = nil then
   begin
@@ -185,7 +185,7 @@ begin
   //InitalMusic;
   //SDL_Init(SDL_INIT_AUDIO);
   //Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 8192);
-  versionstr:= gbktounicode('v 0.506 beta 甲午年新春特別版  ');
+  versionstr:= gbktounicode('v 0.507 beta 甲午年新春特別版  ');
   tmp:='In Stories '+versionstr;
   title:=utf8encode(tmp);
   SDL_WM_SetIcon(IMG_Load('resource\icon'), 0);

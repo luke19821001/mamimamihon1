@@ -1557,11 +1557,9 @@ begin
       Rrole[rnum].TeamState := 3;
       Rrole[rnum].dtime:=random(5);
       Rrole[rnum].nweizhi:=14;
-      Dec(teamcount);
       if Rrole[rnum].leaveevent > 0 then
-      begin
         CallEvent(Rrole[rnum].leaveevent);
-      end;
+      Dec(teamcount);
     end;
   end;
 end;
