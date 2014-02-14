@@ -9078,7 +9078,7 @@ begin
   zyname[7] := 'Æê≤›';
   zyname[8] := 'œ°Ω';
   zyname[9] := '–˛ËF';
-  display_imgFromSurface(SKILL_PIC, 0, 0); //»±Õº
+  display_imgFromSurface(DIZI_PIC, 0, 0); //»±Õº
   //showmessage(inttostr(y));
   m := min(maxshow, max0 + 1);
   DrawRectangle(x, y, w, m * 22 + 6, 0, ColColor(255), 30);

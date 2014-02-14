@@ -3593,7 +3593,7 @@ begin
     if menu = i then DrawRectangle(x + 10 + 120 * (i mod 5), y + 90 + 70 * (i div 5), 95, 24,
         ColColor(64), ColColor(68), 50)
     else DrawRectangle(x + 10 + 120 * (i mod 5), y + 90 + 70 * (i div 5), 95, 24, ColColor(192), ColColor(255), 50);
-    if i < k then DrawShadowText(@names[i][1], x + 10 + 120 * (i mod 5) + (20 - length(names[i]) * 9), y + 91 + 70 * (i div 5),18, ColColor($5), ColColor($7));
+    if i < k then DrawShadowText(@names[i][1], x + 10 + 120 * (i mod 5) + (30 - length(names[i]) * 9), y + 91 + 70 * (i div 5),18, ColColor($5), ColColor($7));
   end;
 
 end;

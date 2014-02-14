@@ -160,7 +160,7 @@ begin
   TTF_Init();
   font := TTF_OpenFont(CHINESE_FONT, CHINESE_FONT_SIZE);
   engfont := TTF_OpenFont(ENGLISH_FONT, ENGLISH_FONT_SIZE);
-  font2 := TTF_OpenFont(CHINESE_FONT_SONGTI, CHINESE_FONT2_SIZE);
+  font2 := TTF_OpenFont(CHINESE_FONT, CHINESE_FONT2_SIZE);
   engfont2 := TTF_OpenFont(ENGLISH_FONT, ENGLISH_FONT2_SIZE);
   if font = nil then
   begin
@@ -185,7 +185,7 @@ begin
   //InitalMusic;
   //SDL_Init(SDL_INIT_AUDIO);
   //Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 8192);
-  versionstr:= gbktounicode('v 0.506 beta 甲午年新春特別版  ');
+  versionstr:= gbktounicode('v 0.507 beta 甲午年新春特別版  ');
   tmp:='In Stories '+versionstr;
   title:=utf8encode(tmp);
   SDL_WM_SetIcon(IMG_Load('resource\icon'), 0);
@@ -449,7 +449,7 @@ begin
   begin
     grp := FileOpen(BACKGROUND_file, fmopenread);
 
-    {BEGIN_PIC := GetPngPic(grp, 0);
+    BEGIN_PIC := GetPngPic(grp, 0);
     MAGIC_PIC := GetPngPic(grp, 1);
     STATE_PIC := GetPngPic(grp, 2);
     SYSTEM_PIC := GetPngPic(grp, 3);
@@ -486,8 +486,16 @@ begin
     HUANGKUANG_PIC:= GetPngPic(grp, 34);
     BIAOTIKUANG_PIC:= GetPngPic(grp, 35);
     HUIKUANG2_PIC:= GetPngPic(grp, 36);
-    HUANGKUANG2_PIC:= GetPngPic(grp, 37); }
-    BEGIN_PIC := GetPngPic(grp, 0);
+    HUANGKUANG2_PIC:= GetPngPic(grp, 37);
+    ROLL:= GetPngPic(grp, 38);
+    ROLLSTYLE:= GetPngPic(grp, 39);
+    WORD_ZHUANGTAI:= GetPngPic(grp, 40);
+    WORD_WORD_WUGONG:= GetPngPic(grp, 41);
+    WORD_XITONG:= GetPngPic(grp, 42);
+    WORD_WUPIN:= GetPngPic(grp, 43);
+    WORD_SHUPU:= GetPngPic(grp, 44);
+    WORD_DUIYOU:= GetPngPic(grp, 45);
+    {BEGIN_PIC := GetPngPic(grp, 0);
     MAGIC_PIC := GetPngPic(grp, 1);
     STATE_PIC := GetPngPic(grp, 2);
     SYSTEM_PIC := GetPngPic(grp, 3);
@@ -516,7 +524,7 @@ begin
     MPZHUANGTAI_PIC := GetPngPic(grp, 26);
     RENMING_PIC := GetPngPic(grp, 27);
     SONGLI_PIC := GetPngPic(grp, 28);
-    YIDONG_PIC := GetPngPic(grp, 29);
+    YIDONG_PIC := GetPngPic(grp, 29); }
 
     FileClose(grp);
     //Setlength(BGidx, 0);
@@ -5710,7 +5718,7 @@ var
 begin
   //setlength(Menuengstring, 4);
   r := 0;
-  display_imgFromSurface(SKILL_PIC, 0, 0);
+  display_imgFromSurface(DIZI_PIC, 0, 0);
   ShowPetStatus(r + 1, 0);
   SDL_UpdateRect2(screen, 0, 0, screen.w, screen.h);
   SDL_EnableKeyRepeat(10, 100);
@@ -5806,7 +5814,7 @@ procedure ShowSkillMenu(menu: integer);
 var
   i: integer;
 begin
-  display_imgFromSurface(SKILL_PIC, 10, 10, 10, 10, 110, 180);
+  display_imgFromSurface(DIZI_PIC, 10, 10, 10, 10, 110, 180);
   setlength(menuString, 0);
   setlength(menuString, 5);
   menuString[0] := gbktounicode(@Rrole[1].Name[0]);
@@ -5973,7 +5981,7 @@ begin
   words[5, 3] := '激勵： 戰鬥中我方成員首先移動。';
   words[5, 4] := '光環： 功體特效可作用到附近三格内隊友。';
 
-  display_imgFromSurface(SKILL_PIC, 120, 0, 120, 0, 520, 440);
+  display_imgFromSurface(DIZI_PIC, 120, 0, 120, 0, 520, 440);
   // DrawRectangle(40, 60, 560, 315, 0, colcolor(255), 40);
   //DrawHeadPic(r, 100 + 40, 150 - 60);   頭像變大了
   ZoomPic(head_pic[r].pic, 0, 100 + 40, 150 - 60 - 60, 58, 60);

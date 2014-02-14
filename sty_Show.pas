@@ -111,7 +111,7 @@ begin
   menu := 0;
   SDL_EnableKeyRepeat(10, 100);
   //DrawMMap;
-  display_imgFromSurface(SKILL_PIC, x, y, x, y, w + 1, 29);
+  display_imgFromSurface(DIZI_PIC, x, y, x, y, w + 1, 29);
   ShowCommonMenu2(x, y, w, menu);
   SDL_UpdateRect2(screen, x, y, w + 1, 29);
   while (SDL_WaitEvent(@event) >= 0) do
@@ -127,7 +127,7 @@ begin
             menu := 0
           else
             menu := 1;
-          display_imgFromSurface(SKILL_PIC, x, y, x, y, w + 1, 29);
+          display_imgFromSurface(DIZI_PIC, x, y, x, y, w + 1, 29);
           ShowCommonMenu2(x, y, w, menu);
           SDL_UpdateRect2(screen, x, y, w + 1, 29);
         end;
@@ -177,7 +177,7 @@ begin
             menu := 0;
           if menup <> menu then
           begin
-            display_imgFromSurface(SKILL_PIC, x, y, x, y, w + 1, 29);
+            display_imgFromSurface(DIZI_PIC, x, y, x, y, w + 1, 29);
             ShowCommonMenu2(x, y, w, menu);
             SDL_UpdateRect2(screen, x, y, w + 1, 29);
           end;
@@ -829,7 +829,7 @@ var
   gongti: array[0..14] of array[0..1] of WideString;
   islearn: array[0..4] of boolean;
 begin
-  display_imgFromSurface(SKILL_PIC, 0, 0);
+  display_imgFromSurface(DIZI_PIC, 0, 0);
   //showmessage(inttostr(y));
   m := min(maxshow, max0 + 1);
   words[0] := '招式一';
@@ -2534,7 +2534,7 @@ end;
 
 procedure NewShowStatus(rnum: integer);
 var
-  i, max, x, y, addatk, adddef, addspeed: integer;
+  i, max,x,y, addatk, adddef, addspeed: integer;
   p: array[0..10] of integer;
   strs: array[0..28] of WideString;
   color1, color2: uint32;
@@ -2548,64 +2548,85 @@ begin
   strs[3] := ' 等級';
   strs[4] := ' 經驗';
   strs[5] := ' 升級';
-  strs[6] := ' 攻擊';
-  strs[7] := ' 防禦';
-  strs[8] := ' 輕功';
-  strs[9] := ' 醫療能力';
-  strs[10] := ' 用毒能力';
-  strs[11] := ' 解毒能力';
-  strs[12] := ' 拳掌功夫';
-  strs[13] := ' 御劍能力';
-  strs[14] := ' 耍刀技巧';
-  strs[15] := ' 奇門兵器';
-  strs[16] := ' 暗器技巧';
-  strs[17] := ' 裝備物品';
-  strs[18] := ' 修煉物品';
-  strs[19] := ' 所會武功';
-  strs[20] := ' 内傷';
-  strs[21] := ' 中毒';
-  strs[22] := ' 资质';
+  strs[6] := ' 中毒';
+  strs[7] := ' 內傷';
+  strs[8] := ' 攻擊';
+  strs[9] := ' 防禦';
+  strs[10] := ' 輕功';
+  strs[11] := ' 醫療';
+  strs[12] := ' 用毒';
+  strs[13] := ' 解毒';
+  strs[14] := ' 拳掌功夫';
+  strs[15] := ' 御劍能力';
+  strs[16] := ' 耍刀技巧';
+  strs[17] := ' 奇門兵器';
+  strs[18] := ' 暗器技巧';
+  strs[19] := ' 頭戴';
+  strs[20] := ' 身披';
+  strs[21] := ' 手拿';
+  strs[22] := ' 足踩';
   strs[23] := ' 關係';
   strs[24] := ' 性格';
   strs[25] := ' 愛好';
   strs[26] := ' 相性';
   strs[27] := ' 資質';
   strs[28] := ' 福源';
-  x := 90;
-  y := 0;
   display_imgFromSurface(STATE_PIC.pic, 0, 0);
+  display_imgFromSurface(WORD_ZHUANGTAI_PIC.pic, 285, 3);
+  display_imgFromSurface(BIAOTIKUANG_PIC.pic, 2, 17);
+  x:=138;
+  y:=16;
   if isbattle = False then
   begin
-    DrawRectangle(15, 15, 90, 10 + max * 22, $0, ColColor(0, 255), 30);
+
     //当前所在位置用白色, 其余用黄色
     for i := 0 to max - 1 do
+    begin
+      display_imgFromSurface(HUIKUANG_PIC.pic, 2, 44 + 27 * i);
+      DrawText(screen,@menuString[i][1], 3 + 53 - 9 * length(menuString[i]), 46 + 27 * i,18, ColColor(0));
       if teamlist[i] = rnum then
       begin
-        DrawShadowText(@menuString[i][1], 0, 20 + 22 * i, ColColor(0, $64), ColColor(0, $66));
-      end
-      else
-      begin
-        DrawShadowText(@menuString[i][1], 0, 20 + 22 * i, ColColor(0, $5), ColColor(0, $7));
+        display_imgFromSurface(HUANGKUANG_PIC.pic, 3, 44 + 1 + 28 * i);
+        DrawText(screen,@menuString[i][1], 3 + 53 - 9 * length(menuString[i]), 19,18, ColColor(0));
       end;
+    end;
   end;
   //DrawHeadPic(rrole[rnum].HeadNum, 137, 88);
-  ZoomPic(head_pic[Rrole[rnum].HeadNum].pic, 0, 137, 88 - 60, 58, 60);
+  ZoomPic(head_pic[Rrole[rnum].HeadNum].pic, 0, 153,124- 60, 58, 60);
 
 
   str := gbkToUnicode(@Rrole[rnum].Name);
-  DrawShadowText(@str[1], 115, 93, ColColor($64), ColColor($66));
+  DrawText(screen,@str[1], 240 - 9 * length(str), 42,18, ColColor(0));
 
   for i := 3 to 5 do
-    DrawShadowText(@strs[i, 1], x + 25, y + 94 + 21 * (i - 2), ColColor(0, $21), ColColor(0, $23));
-  for i := 6 to 16 do
-    DrawShadowText(@strs[i, 1], x + 25, y + 115 + 21 * (i - 3), ColColor(0, $63), ColColor(0, $66));
+  begin
+    DrawText(screen,@strs[i, 1], 240 - 9 * length(strs[i]), 42 + 23 * (i - 2),18, ColColor(0));
+  end;
+  for i := 0 to 2 do
+  begin
+    DrawText(screen,@strs[i, 1], 157 - 9 * length(strs[i]),135 + 21 * (i),18, ColColor(18));
+  end;
 
+  DrawText(screen,@strs[i, 1], 185 - 9 * length(strs[i]), 209,18, ColColor(56));
+  DrawText(screen,@strs[i, 1], 185 - 9 * length(strs[i]) + 80, 209,18, ColColor(18));
 
-  DrawShadowText(@strs[21, 1], x + 25 + 79, y + 115 - 21, ColColor(0, $30), ColColor(0, $32));
+  for i := 8 to 10 do
+  begin
+    DrawText(screen,@strs[i, 1], 159 - 9 * length(strs[i]), 245 + 20 * (i - 8),18, ColColor(0));
+  end;
+  for i := 11 to 13 do
+  begin
+    DrawText(screen,@strs[i, 1], 280 - 9 * length(strs[i]), 245 + 20 * (i - 11),18, ColColor(0));
+  end;
+  for i := 14 to 18 do
+  begin
+    DrawText(screen,@strs[i, 1], 203 - 9 * length(strs[i]), 320 + 20 * (i - 14),18, ColColor(0));
+  end;
+  DrawShadowText(@strs[21, 1],  25 + 79, y + 115 - 21, ColColor(0, $30), ColColor(0, $32));
   str := IntToStr(Rrole[rnum].Poision);
-  DrawShadowText(@str[1], x + 25 + 150, y + 115 - 21, ColColor(0, $63), ColColor(0, $66));
+  DrawShadowText(@str[1], 25 + 150, y + 115 - 21, ColColor(0, $63), ColColor(0, $66));
 
-  DrawShadowText(@strs[20, 1], x + 30 + 179, y + 115 - 21, ColColor(0, $13), ColColor(0, $16));
+  DrawShadowText(@strs[20, 1],  30 + 179, y + 115 - 21, ColColor(0, $13), ColColor(0, $16));
   str := IntToStr(Rrole[rnum].Hurt);
   DrawShadowText(@str[1], x + 125 + 155, y + 115 - 21, ColColor(0, $63), ColColor(0, $66));
 
