@@ -967,6 +967,7 @@ end;
 
 function PutRolePro(L: Plua_state): integer; cdecl;
 begin
+  Rrole_a[floor(lua_tonumber(L, -2))].Data[floor(lua_tonumber(L, -1))] :=Rrole_a[floor(lua_tonumber(L, -2))].Data[floor(lua_tonumber(L, -1))] + floor(lua_tonumber(L, -3)) - Rrole[floor(lua_tonumber(L, -2))].Data[floor(lua_tonumber(L, -1))];
   Rrole[floor(lua_tonumber(L, -2))].Data[floor(lua_tonumber(L, -1))] := floor(lua_tonumber(L, -3));
   Result := 0;
 

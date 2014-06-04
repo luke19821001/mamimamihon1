@@ -96,7 +96,8 @@ procedure DrawEngShadowText(word: puint16; x_pos, y_pos: integer; color1, color2
 procedure DrawBig5Text(sur: PSDL_Surface; str: pchar; x_pos, y_pos: integer; color: uint32);
 procedure DrawBig5ShadowText(word: pchar; x_pos, y_pos: integer; color1, color2: uint32);
 procedure DrawGBKText(sur: PSDL_Surface; str: pchar; x_pos, y_pos: integer; color: uint32);
-procedure DrawGBKShadowText(word: pchar; x_pos, y_pos: integer; color1, color2: uint32);
+procedure DrawGBKShadowText(word: pchar; x_pos, y_pos: integer; color1, color2: uint32); overload;
+procedure DrawGBKShadowText(word: pchar; x_pos, y_pos , size: integer; color1, color2: uint32); overload;
 procedure DrawTextWithRect(word: puint16; x, y, w: integer; color1, color2: uint32);
 procedure DrawRectangle(x, y, w, h: integer; colorin, colorframe: uint32; alpha: integer);
 procedure DrawRectangleWithoutFrame(x, y, w, h: integer; colorin: uint32; alpha: integer);
@@ -593,7 +594,6 @@ begin
 end;
 
 //显示bmp文件
-
 procedure display_bmp(file_name: pchar; x, y: integer);
 var
   image: PSDL_Surface;
@@ -1604,6 +1604,11 @@ begin
   begin
     ax1 := 9;
     ax2 := 18;
+  end
+  else if size = 16 then
+  begin
+    ax1 := 8;
+    ax2 := 16;
   end;
   color := c1 + c2 shl 8 + c3 shl 16 + c4 shl 24;
   pword[0] := 32;
@@ -1624,7 +1629,7 @@ begin
     begin
       if size = 18 then
       begin
-        Text := TTF_RenderUNICODE_blended(font2, @pword[0], TSDL_Color(Color));
+        Text := TTF_RenderUNICODE_blended(font18, @pword[0], TSDL_Color(Color));
       end
       else
       begin
@@ -1643,15 +1648,16 @@ begin
         pword[1] := 0;
         x_pos := x;
         y_pos := y_pos + 19;
+        continue;
       end;
       if size = 18 then
       begin
-        Text := TTF_RenderUNICODE_blended(engfont2, @pword[1], TSDL_Color(Color));
+        Text := TTF_RenderUNICODE_blended(engfont16, @pword[1], TSDL_Color(Color));
 
       end
       else
         Text := TTF_RenderUNICODE_blended(engfont, @pword[1], TSDL_Color(Color));
-      dest.x := x_pos + ax1 - 3 * (20 - ax2);
+      dest.x := x_pos + ax1;
       dest.y := y_pos + 4;
       SDL_BlitSurface(Text, nil, sur, @dest);
 
@@ -1753,17 +1759,19 @@ begin
 end;
 
 //显示GBK阴影文字
-
-procedure DrawGBKShadowText(word: pchar; x_pos, y_pos: integer; color1, color2: uint32);
+procedure DrawGBKShadowText(word: pchar; x_pos, y_pos , size: integer; color1, color2: uint32); overload;
 var
   len: integer;
   words: WideString;
 begin
   words := gbktounicode(word);
-  DrawText(screen, @words[1], x_pos + 11, y_pos, color2);
-  DrawText(screen, @words[1], x_pos + 10, y_pos, color1);
+  DrawText(screen, @words[1], x_pos + 11, y_pos, size, color2);
+  DrawText(screen, @words[1], x_pos + 10, y_pos, size, color1);
 end;
-
+procedure DrawGBKShadowText(word: pchar; x_pos, y_pos: integer; color1, color2: uint32); overload;
+begin
+  DrawGBKShadowText(word, x_pos, y_pos , 20, color1, color2)
+end;
 //显示带边框的文字, 仅用于unicode, 需自定义宽度
 
 procedure DrawTextWithRect(word: puint16; x, y, w: integer; color1, color2: uint32);
@@ -3558,7 +3566,7 @@ begin
   dest.y := y;
   dest.w := w;
   dest.h := h;
-  if scr1 = screen then
+  if (scr1.w = prescreen.w) and (scr1.h = prescreen.h) then
   begin
     //sdl_setalpha(screen, SDL_SRCALPHA, 128);
 

@@ -35,7 +35,8 @@ uses
   iniFiles,
   Lua52,
   bass,
-  kys_type;
+  kys_type,
+  MD5;
 
 
 //程序重要子程
@@ -107,7 +108,7 @@ procedure PetLearnSkill(r, s: integer);
 procedure ResistTheater;
 
 //新增
-procedure initialeventtime;
+procedure InitialAutoEvent;
 procedure setbuild(snum: integer);
 procedure initialmpmagic;
 procedure initialziyuan;
@@ -120,6 +121,7 @@ function randomf3: integer;
 procedure initialwujishu;
 //加密\解密
 procedure jiami(filename: string);
+procedure jiemi(data:pbyte;len:integer;var wei:integer);
 
 //读入战斗图（由出招动画而来）
 procedure initialWimage;
@@ -143,6 +145,7 @@ procedure Run;
 var
   tmp:widestring;
   title:UTF8String;
+  i:integer;
 begin
 {$IFDEF UNIX}
   AppPath := ExtractFilePath(ParamStr(0));
@@ -160,8 +163,10 @@ begin
   TTF_Init();
   font := TTF_OpenFont(CHINESE_FONT, CHINESE_FONT_SIZE);
   engfont := TTF_OpenFont(ENGLISH_FONT, ENGLISH_FONT_SIZE);
-  font2 := TTF_OpenFont(CHINESE_FONT, CHINESE_FONT2_SIZE);
-  engfont2 := TTF_OpenFont(ENGLISH_FONT, ENGLISH_FONT2_SIZE);
+  font18 := TTF_OpenFont(CHINESE_FONT, 18);
+  font16 := TTF_OpenFont(CHINESE_FONT, 16);
+  engfont16 := TTF_OpenFont(ENGLISH_FONT, 16);
+
   if font = nil then
   begin
     MessageBox(0, pchar(Format('Error:%s!', [SDL_GetError])), 'Error', MB_OK or MB_ICONHAND);
@@ -185,7 +190,7 @@ begin
   //InitalMusic;
   //SDL_Init(SDL_INIT_AUDIO);
   //Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT, 2, 8192);
-  versionstr:= gbktounicode('v 0.507 beta 甲午年新春特別版  ');
+  versionstr:= gbktounicode('v 0.51 beta 劇情錄入中  ');
   tmp:='In Stories '+versionstr;
   title:=utf8encode(tmp);
   SDL_WM_SetIcon(IMG_Load('resource\icon'), 0);
@@ -202,12 +207,17 @@ begin
     ScreenFlag := ScreenFlag or SDL_HWSURFACE
   else
     ScreenFlag := ScreenFlag or SDL_SWSURFACE;
-  if FULLSCREEN <> 0 then
-    ScreenFlag := ScreenFlag or SDL_FULLSCREEN;
   if GLHR = 1 then
     ScreenFlag := ScreenFlag or SDL_OPENGL;
 
-  RealScreen := SDL_SetVideoMode(RESOLUTIONX, RESOLUTIONY, 32, screenFlag);
+  if FULLSCREEN = 0 then
+  begin
+    RealScreen := SDL_SetVideoMode(RESOLUTIONX, RESOLUTIONY, 32, ScreenFlag);
+  end
+  else
+  begin
+    RealScreen := SDL_SetVideoMode(CENTER_X * 2, CENTER_Y * 2, 32, ScreenFlag or SDL_FULLSCREEN);
+  end;
 
   if (RealScreen = nil) then
   begin
@@ -219,7 +229,10 @@ begin
 
   screen := SDL_CreateRGBSurface(ScreenFlag, CENTER_X * 2, CENTER_Y * 2, 32, RMASK, GMASK, BMASK, 0);
   prescreen := SDL_CreateRGBSurface(ScreenFlag, CENTER_X * 2, CENTER_Y * 2, 32, RMASK, GMASK, BMASK, 0);
-
+  for i:=0 to 2 do
+  begin
+    screens[i] := SDL_CreateRGBSurface(ScreenFlag, CENTER_X * 2, CENTER_Y * 2, 32, RMASK, GMASK, BMASK, 0);
+  end;
   InitialMusic;
 
   Start;
@@ -227,8 +240,9 @@ begin
   DestroyScript;
   TTF_CloseFont(font);
   TTF_CloseFont(engfont);
-  TTF_CloseFont(font2);
-  TTF_CloseFont(engfont2);
+  TTF_CloseFont(font18);
+  TTF_CloseFont(font16);
+  TTF_CloseFont(engfont16);
   TTF_Quit;
   SDL_Quit;
   halt(1);
@@ -243,8 +257,9 @@ begin
   DestroyScript;
   TTF_CloseFont(font);
   TTF_CloseFont(engfont);
-  TTF_CloseFont(font2);
-  TTF_CloseFont(engfont2);
+  TTF_CloseFont(font18);
+  TTF_CloseFont(font16);
+  TTF_CloseFont(engfont16);
   TTF_Quit;
   SDL_Quit;
   halt(1);
@@ -495,37 +510,29 @@ begin
     WORD_WUPIN_PIC:= GetPngPic(grp, 43);
     WORD_SHUPU_PIC:= GetPngPic(grp, 44);
     WORD_DUIYOU_PIC:= GetPngPic(grp, 45);
-    {BEGIN_PIC := GetPngPic(grp, 0);
-    MAGIC_PIC := GetPngPic(grp, 1);
-    STATE_PIC := GetPngPic(grp, 2);
-    SYSTEM_PIC := GetPngPic(grp, 3);
-    MAP_PIC := GetPngPic(grp, 4);
-    SKILL_PIC := GetPngPic(grp, 5);
-    MENUESC_PIC := GetPngPic(grp, 6);
-    MENUESCBack_PIC := GetPngPic(grp, 7);
-    battlePIC := GetPngPic(grp, 8);
-    TEAMMATE_PIC := GetPngPic(grp, 9);
-    MENUITEM_PIC := GetPngPic(grp, 10);
-    PROGRESS_PIC := GetPngPic(grp, 11);
-    MATESIGN_PIC := GetPngPic(grp, 12);
-    ENEMYSIGN_PIC := GetPngPic(grp, 13);
-    SELECTEDENEMY_PIC := GetPngPic(grp, 14);
-    SELECTEDMATE_PIC := GetPngPic(grp, 15);
-    NowPROGRESS_PIC := GetPngPic(grp, 16);
-    angryprogress_pic := GetPngPic(grp, 17);
-    angrycollect_pic := GetPngPic(grp, 18);
-    angryfull_pic := GetPngPic(grp, 19);
-    DEATH_PIC := GetPngPic(grp, 20);
-    Maker_Pic := GetPngPic(grp, 21);
-    DIZI_PIC := GetPngPic(grp, 22);
-    GONGJI_PIC := GetPngPic(grp, 23);
-    JIANSHE_PIC := GetPngPic(grp, 24);
-    MPNEIGONG_PIC := GetPngPic(grp, 25);
-    MPZHUANGTAI_PIC := GetPngPic(grp, 26);
-    RENMING_PIC := GetPngPic(grp, 27);
-    SONGLI_PIC := GetPngPic(grp, 28);
-    YIDONG_PIC := GetPngPic(grp, 29); }
-
+    WORD_XINGGE_PIC:= GetPngPic(grp, 46);
+    WORD_XINGGEZY_PIC:= GetPngPic(grp, 47);
+    for i:=0 to 9 do
+    begin
+      WORD_XIANGXING_PIC[i]:= GetPngPic(grp, 48 + i);
+    end;
+    for i:=0 to 7 do
+    begin
+      WORD_YOUHAO_PIC[i]:= GetPngPic(grp, 58 + i);
+    end;
+    for i:=0 to 8 do
+    begin
+      WORD_AIHAO_PIC[i]:= GetPngPic(grp, 66 + i);
+    end;
+    for i:=0 to 4 do
+    begin
+      WORD_SYSTEM_PIC[i]:= GetPngPic(grp, 75 + i);
+    end;
+    RENWU_PIC:= GetPngPic(grp, 80);
+    WORD_RENWU_PIC:= GetPngPic(grp, 81);
+    HUIKUANG3_PIC:= GetPngPic(grp, 82);
+    HUANGKUANG3_PIC:= GetPngPic(grp, 83);
+    BIAOTIKUANG3_PIC:= GetPngPic(grp, 84);
     FileClose(grp);
     //Setlength(BGidx, 0);
   end;
@@ -592,9 +599,9 @@ begin
   MStep := 0;
   // fullscreen := 0;
   where := 3;
-  SDL_UpdateRect2(screen, 0, 0, screen.w, screen.h);
   menu := 0;
   Setlength(RItemlist, MAX_ITEM_AMOUNT);
+  Setlength(RItemlist_a, MAX_ITEM_AMOUNT);
   for i := 0 to MAX_ITEM_AMOUNT - 1 do
   begin
     RItemlist[i].Number := -1;
@@ -616,7 +623,6 @@ begin
     begin
 
       CheckBasicEvent;
-
       //如选择第2项, 则退出(所有编号从0开始)
       if (((event.type_ = SDL_KEYUP) and ((event.key.keysym.sym = SDLK_RETURN) or
         (event.key.keysym.sym = SDLK_SPACE))) or ((event.type_ = SDL_MOUSEBUTTONUP) and
@@ -727,6 +733,7 @@ begin
     end;
     if where >= 3 then
     begin
+      SDL_EnableKeyRepeat(10, 100);
       StopMP3;
       PlayMP3(114, -1);
       SDL_EventState(SDL_MOUSEMOTION, SDL_ENABLE);
@@ -745,7 +752,7 @@ begin
     SDL_UpdateRect2(screen, 0, 0, screen.w, screen.h);
   end;
 
-  SDL_EnableKeyRepeat(30, (30 * gamespeed) div 10);
+  SDL_EnableKeyRepeat(30, 100+(30 * gamespeed) div 10);
 end;
 
 //初始化主角属性
@@ -766,6 +773,30 @@ begin
   LoadR(0);
   if debug = 1 then
   begin
+    Rrole_a[0].MaxHP :=Rrole_a[0].MaxHP + 9999 - Rrole[0].MaxHP;
+    Rrole_a[0].CurrentHP :=Rrole_a[0].CurrentHP + 9999 - Rrole[0].CurrentHP;
+    Rrole_a[0].MaxMP :=Rrole_a[0].MaxMP + 9999 - Rrole[0].MaxMP;
+    Rrole_a[0].CurrentMP := Rrole_a[0].CurrentMP + 9999 - Rrole[0].CurrentMP;
+    Rrole_a[0].MPType :=Rrole_a[0].MPType + 2 - Rrole[0].MPType;
+    Rrole_a[0].IncLife :=Rrole_a[0].IncLife + 5 - Rrole[0].IncLife;
+    Rrole_a[0].Attack :=Rrole_a[0].Attack + 200 - Rrole[0].Attack;
+    Rrole_a[0].Speed :=Rrole_a[0].Speed + 200 - Rrole[0].Speed;
+    Rrole_a[0].Defence :=Rrole_a[0].Defence + 200 - Rrole[0].Defence;
+    Rrole_a[0].Medcine :=Rrole_a[0].Medcine + 0 - Rrole[0].Medcine;
+    Rrole_a[0].UsePoi :=Rrole_a[0].UsePoi + 0 - Rrole[0].UsePoi;
+    Rrole_a[0].Fist :=Rrole_a[0].Fist + 200 - Rrole[0].Fist;
+    Rrole_a[0].Sword :=Rrole_a[0].Sword + 200 - Rrole[0].Sword;
+    Rrole_a[0].Knife :=Rrole_a[0].Knife + 200 - Rrole[0].Knife;
+    Rrole_a[0].Unusual :=Rrole_a[0].Unusual + 200 - Rrole[0].Unusual;
+    Rrole_a[0].HidWeapon :=Rrole_a[0].HidWeapon + 200 - Rrole[0].HidWeapon;
+    Rrole_a[0].xiangxing :=Rrole_a[0].xiangxing + 4 - Rrole[0].xiangxing;
+    Rrole_a[0].Aptitude :=Rrole_a[0].Aptitude + 100 - Rrole[0].Aptitude;
+    Rrole_a[0].fuyuan :=Rrole_a[0].fuyuan + 100 - Rrole[0].fuyuan;
+    Rrole_a[0].LMagic[0] :=Rrole_a[0].LMagic[0] + 20 - Rrole[0].LMagic[0];
+    Rrole_a[0].LMagic[1] :=Rrole_a[0].LMagic[1] + 18 - Rrole[0].LMagic[1];
+    Rrole_a[0].MagLevel[0] :=Rrole_a[0].MagLevel[0] + 100 - Rrole[0].MagLevel[0];
+    Rrole_a[0].MagLevel[1] :=Rrole_a[0].MagLevel[1] + 999 - Rrole[0].MagLevel[1];
+
     Rrole[0].Name := '測試';
     Rrole[0].MaxHP := 9999;
     Rrole[0].CurrentHP := 9999;
@@ -773,7 +804,6 @@ begin
     Rrole[0].CurrentMP := 9999;
     Rrole[0].MPType := 2;
     Rrole[0].IncLife := 5;
-
     Rrole[0].Attack := 200;
     Rrole[0].Speed := 200;
     Rrole[0].Defence := 200;
@@ -785,8 +815,7 @@ begin
     Rrole[0].Knife := 200;
     Rrole[0].Unusual := 200;
     Rrole[0].HidWeapon := 200;
-
-    Rrole[0].xiangxing := random(10);
+    Rrole[0].xiangxing := 4;
     Rrole[0].Aptitude := 100;
     Rrole[0].fuyuan := 100;
     Rrole[0].LMagic[0] := 20;
@@ -796,6 +825,9 @@ begin
     Rrole[0].Gongti := 0;
     Rrole[0].jhMagic[0] := 1;
     Rrole[0].level := 1;
+
+
+
     for i := 0 to length(Rscene) - 1 do
       setbuild(i);
     initialwugong;
@@ -811,7 +843,8 @@ begin
     end;
     M_idx[0] := 40 * 400 * 2;
     M_idx[1] := 40 * 400 * 2;
-    initialeventtime;
+    InitialAutoEvent;
+    Result:=true;
     exit;
   end;
 
@@ -874,7 +907,10 @@ begin
     p0 := @Rrole[0].Name;
     p1 := @str1[1];
     for i := 0 to 4 do
+    begin
+      Rrole_a[0].Data[4 + i] :=Rrole_a[0].Data[4 + i]  - Rrole[0].Data[4 + i];
       Rrole[0].Data[4 + i] := 0;
+    end;
     for i := 0 to 7 do
     begin
       (p0 + i)^ := (p1 + i)^;
@@ -907,7 +943,7 @@ begin
       M_idx[0] := 40 * 400 * 2;
       M_idx[1] := 40 * 400 * 2;
       // PlayBeginningMovie(26, 0);
-      initialeventtime;
+      InitialAutoEvent;
       if fuli = 3 then
       begin
         instruct_2(141, 1);
@@ -924,7 +960,7 @@ end;
 procedure ShowRandomAttribute(ran: Bool);
 var
   tip: WideString;
-  maxnum, jichunum,HpMp: smallint;
+  maxnum, jichunum,HpMp,tmp: smallint;
 
 begin
   maxnum := 100;
@@ -936,50 +972,76 @@ begin
   tip := '選定屬性後按Y';
   if (ran = True) then
   begin
-    {Rrole[0].MaxHP := 51 + random(50);
+    tmp:= 50 + random(HpMp);
+    Rrole_a[0].MaxHP :=Rrole_a[0].MaxHP +tmp - Rrole[0].MaxHP;
+    Rrole[0].MaxHP :=tmp;
+    Rrole_a[0].CurrentHP :=Rrole_a[0].CurrentHP +Rrole[0].MaxHP - Rrole[0].CurrentHP;
     Rrole[0].CurrentHP := Rrole[0].MaxHP;
-    Rrole[0].MaxMP := 51 + random(50);
+
+    tmp:= 50 + random(HpMp);
+    Rrole_a[0].MaxMP :=Rrole_a[0].MaxMP + tmp - Rrole[0].MaxMP;
+    Rrole[0].MaxMP :=tmp;
+    Rrole_a[0].CurrentMP :=Rrole_a[0].CurrentMP + Rrole[0].MaxMP - Rrole[0].CurrentMP;
     Rrole[0].CurrentMP := Rrole[0].MaxMP;
-    Rrole[0].MPType := random(2);
-    Rrole[0].IncLife := 1 + random(10);
 
-    Rrole[0].Attack := 25 + random(6);
-    Rrole[0].Speed := 25 + random(6);
-    Rrole[0].Defence := 25 + random(6);
-    Rrole[0].Medcine := 25 + random(6);
-    Rrole[0].UsePoi := 25 + random(6);
-    Rrole[0].MedPoi := 25 + random(6);
-    Rrole[0].Fist := 25 + random(6);
-    Rrole[0].Sword := 25 + random(6);
-    Rrole[0].Knife := 25 + random(6);
-    Rrole[0].Unusual := 25 + random(6);
-    Rrole[0].HidWeapon := 25 + random(6);
+    tmp:= random(3);
+    Rrole_a[0].MPType :=Rrole_a[0].MPType + tmp - Rrole[0].MPType;
+    Rrole[0].MPType :=tmp;
 
-    rrole[0].Aptitude := 1 + random(100);}
+    tmp:= 1 + random(10);
+    Rrole_a[0].IncLife :=Rrole_a[0].IncLife + tmp - Rrole[0].IncLife;
+    Rrole[0].IncLife :=tmp;
 
-    Rrole[0].MaxHP := 50 + random(HpMp);
-    Rrole[0].CurrentHP := Rrole[0].MaxHP;
-    Rrole[0].MaxMP := 50 + random(HpMp);
-    Rrole[0].CurrentMP := Rrole[0].MaxMP;
-    Rrole[0].MPType := random(3);
-    Rrole[0].IncLife := 1 + random(10);
+    tmp:= 25 + random(jichunum);
+    Rrole_a[0].Attack :=Rrole_a[0].Attack + tmp - Rrole[0].Attack;
+    Rrole[0].Attack :=tmp;
+    tmp:= 25 + random(jichunum);
+    Rrole_a[0].Speed :=Rrole_a[0].Speed + tmp - Rrole[0].Speed;
+    Rrole[0].Speed :=tmp;
+    tmp:= 25 + random(jichunum);
+    Rrole_a[0].Defence :=Rrole_a[0].Defence + tmp - Rrole[0].Defence;
+    Rrole[0].Defence :=tmp;
+    tmp:= 0;
+    Rrole_a[0].Medcine :=Rrole_a[0].Medcine + tmp - Rrole[0].Medcine;
+    Rrole[0].Medcine :=tmp;
 
-    Rrole[0].Attack := 25 + random(jichunum);
-    Rrole[0].Speed := 25 + random(jichunum);
-    Rrole[0].Defence := 25 + random(jichunum);
-    Rrole[0].Medcine := 0;
-    Rrole[0].UsePoi := 0;
-    Rrole[0].MedPoi := 0;
-    Rrole[0].Fist := 25 + random(jichunum);
-    Rrole[0].Sword := 25 + random(jichunum);
-    Rrole[0].Knife := 25 + random(jichunum);
-    Rrole[0].Unusual := 25 + random(jichunum);
-    Rrole[0].HidWeapon := 25 + random(jichunum);
+    tmp:= 0;
+    Rrole_a[0].UsePoi :=Rrole_a[0].UsePoi + tmp - Rrole[0].UsePoi;
+    Rrole[0].UsePoi :=tmp;
 
-    Rrole[0].xiangxing := random(10);
-    Rrole[0].Aptitude := 1 + random(100);
-    Rrole[0].fuyuan := min(100, maxnum - Rrole[0].Aptitude + random(11));
-    Rrole[0].level := 1;
+    tmp:= 0;
+    Rrole_a[0].MedPoi :=Rrole_a[0].MedPoi + tmp - Rrole[0].MedPoi;
+    Rrole[0].MedPoi :=tmp;
+
+    tmp:= 25 + random(jichunum);
+    Rrole_a[0].Fist :=Rrole_a[0].Fist + tmp - Rrole[0].Fist;
+    Rrole[0].Fist :=tmp;
+    tmp:= 25 + random(jichunum);
+    Rrole_a[0].Sword :=Rrole_a[0].Sword + tmp - Rrole[0].Sword;
+    Rrole[0].Sword :=tmp;
+    tmp:= 25 + random(jichunum);
+    Rrole_a[0].Knife :=Rrole_a[0].Knife + tmp - Rrole[0].Knife;
+    Rrole[0].Knife :=tmp;
+    tmp:= 25 + random(jichunum);
+    Rrole_a[0].Unusual :=Rrole_a[0].Unusual + tmp - Rrole[0].Unusual;
+    Rrole[0].Unusual :=tmp;
+    tmp:= 25 + random(jichunum);
+    Rrole_a[0].HidWeapon :=Rrole_a[0].HidWeapon + tmp - Rrole[0].HidWeapon;
+    Rrole[0].HidWeapon :=tmp;
+
+    tmp:= random(10);
+    Rrole_a[0].xiangxing :=Rrole_a[0].xiangxing + tmp - Rrole[0].xiangxing;
+    Rrole[0].xiangxing :=tmp;
+
+    tmp:= 1 + random(100);
+    Rrole_a[0].Aptitude :=Rrole_a[0].Aptitude + tmp - Rrole[0].Aptitude;
+    Rrole[0].Aptitude :=tmp;
+
+    tmp:= min(100, maxnum - Rrole[0].Aptitude + random(11));
+    Rrole_a[0].fuyuan :=Rrole_a[0].fuyuan + tmp - Rrole[0].fuyuan;
+    Rrole[0].fuyuan :=tmp;
+
+    Rrole[0].level :=1;
 
   end;
   Redraw;
@@ -1031,14 +1093,18 @@ var
   str: string;
   str1: WideString;
   p1, p0: pchar;
-  key, pass: byte;
+  key,pass: byte;
   data1: pbyte;
   m6len: array[0..19] of array[0..3] of smallint;
   tmp1: smallint;
+  GRPMD5,GRPMD5_l:ARRAY[0..31] OF Byte;
+  md5:string;
+  savedata:Tsave;
 begin
   RStishi.num := 0;
   ShowTips.num:=0;
   SaveNum := num;
+
   filename := 'R' + IntToStr(num);
   filename1 := 'save\' + 'R' + IntToStr(num) + '.grp';
 
@@ -1047,13 +1113,14 @@ begin
 
   if num = 0 then
   begin
-    RccRole.Count := 0;
+    TimeTrigger.Count := 0;
     setlength(Rrenwu, 0);
+    for i:=-$8000 to $7FFF do
+      x50[i]:=0;
   end;
 
   idx := FileOpen('save\ranger.idx', fmopenread);
   grp := FileOpen('save\' + filename + '.grp', fmopenread);
-
   FileRead(idx, RoleOffset, 4);
   FileRead(idx, ItemOffset, 4);
   FileRead(idx, SceneOffset, 4);
@@ -1065,8 +1132,123 @@ begin
   FileRead(idx, len, 4);
   key := 182;
   wei := 0;
+
   FileSeek(grp, 0, 0);
-  FileRead(grp, Inship, 2);
+  FileRead(grp, grpmd5[0], 32);
+  jiemi(@grpmd5,32,wei);
+
+  setlength(savedata.a,len);
+  savedata.len:=len;
+  FileRead(grp, savedata.a[0], savedata.len);
+
+  jiemi(@savedata.a[0], savedata.len,wei);
+  md5:=getMD5HashString(savedata);
+  for i := 0 to 31 do
+  begin
+    grpmd5_l[i]:=BYTE(md5[i + 1]);
+  end;
+  for i := 0 to 31 do
+  begin
+    if grpmd5_l[i] <> grpmd5[i] then
+    begin
+      dealcheat;
+      break;
+    end;
+  end;
+
+  wei:=0;
+  len1:=2;
+  CopyMemory(@Inship,@savedata.a[wei],len1);
+  wei:=wei + len1;
+  len1:=2;
+  CopyMemory(@where,@savedata.a[wei],len1);
+  wei:=wei + len1;
+  len1:=2;
+  CopyMemory(@My,@savedata.a[wei],len1);
+  wei:=wei + len1;
+  len1:=2;
+  CopyMemory(@Mx,@savedata.a[wei],len1);
+  wei:=wei + len1;
+  len1:=2;
+  CopyMemory(@Sy,@savedata.a[wei],len1);
+  wei:=wei + len1;
+  len1:=2;
+  CopyMemory(@Sx,@savedata.a[wei],len1);
+  wei:=wei + len1;
+
+  len1:=2;
+  CopyMemory(@Mface,@savedata.a[wei],len1);
+  wei:=wei + len1;
+  len1:=2;
+  CopyMemory(@shipx,@savedata.a[wei],len1);
+  wei:=wei + len1;
+  len1:=2;
+  CopyMemory(@shipy,@savedata.a[wei],len1);
+  wei:=wei + len1;
+  len1:=2;
+  CopyMemory(@time,@savedata.a[wei],len1);
+  wei:=wei + len1;
+  len1:=2;
+  CopyMemory(@timeevent,@savedata.a[wei],len1);
+  wei:=wei + len1;
+  len1:=2;
+  CopyMemory(@randomevent,@savedata.a[wei],len1);
+  wei:=wei + len1;
+  len1:=2;
+  CopyMemory(@Sface,@savedata.a[wei],len1);
+  wei:=wei + len1;
+  len1:=2;
+  CopyMemory(@Shipface,@savedata.a[wei],len1);
+  wei:=wei + len1;
+  len1:=2;
+  CopyMemory(@teamcount,@savedata.a[wei],len1);
+  wei:=wei + len1;
+  len1:=2 * 6;
+  CopyMemory(@teamlist[0],@savedata.a[wei],len1);
+  wei:=wei + len1;
+  len1:=sizeof(Titemlist) * MAX_ITEM_AMOUNT;
+  CopyMemory(@Ritemlist[0],@savedata.a[wei],len1);
+  wei:=wei + len1;
+  len1:=ItemOffset - RoleOffset;
+  setlength(Rrole, len1 div sizeof(Trole));
+  setlength(Rrole_a, len1 div sizeof(Trole));
+  CopyMemory(@Rrole[0],@savedata.a[wei],len1);
+  wei:=wei + len1;
+  len1:=SceneOffset - ItemOffset;
+  setlength(Ritem, len1 div sizeof(TItem));
+  CopyMemory(@Ritem[0],@savedata.a[wei],len1);
+  setlength(ITEM_PIC, length(Ritem));
+
+  wei:=wei + len1;
+  len1:=MagicOffset - SceneOffset;
+  setlength(RScene, len1 div sizeof(TScene));
+  CopyMemory(@RScene[0],@savedata.a[wei],len1);
+  Setlength(SceAnpai, len1 div sizeof(TScene));
+  wei:=wei + len1;
+  len1:=WeiShopOffset - MagicOffset;
+  setlength(Rmagic, len1 div sizeof(TMagic));
+  CopyMemory(@Rmagic[0],@savedata.a[wei],len1);
+  wei:=wei + len1;
+  len1:=dateoffset - WeiShopOffset;
+  setlength(Rshop, len1 div sizeof(Tshop));
+  CopyMemory(@Rshop[0],@savedata.a[wei],len1);
+
+  wei:=wei + len1;
+  len1:=zhaoshioffset - dateoffset;
+  CopyMemory(@wdate[0],@savedata.a[wei],len1);
+
+  wei:=wei + len1;
+  len1:=menpaioffset - zhaoshiOffset;
+  setlength(Rzhaoshi, len1 div sizeof(Tzhaoshi));
+  CopyMemory(@Rzhaoshi[0],@savedata.a[wei],len1);
+
+  wei:=wei + len1;
+  len1:=len - menpaioffset;
+  setlength(Rmenpai, len1 div sizeof(Tmenpai));
+  CopyMemory(@Rmenpai[0],@savedata.a[wei],len1);
+
+
+  {FileRead(grp, Inship, 2);
   data1 := @Inship;
   for i := 0 to 1 do
   begin
@@ -1301,7 +1483,7 @@ begin
     data1^ := data1^ xor pass;
     Inc(data1);
     Inc(wei);
-  end;
+  end;}
 
   FileClose(idx);
   FileClose(grp);
@@ -1326,9 +1508,12 @@ begin
   if num = 0 then
     filename := 'Allsin';
   grp := FileOpen('save\' + filename + '.grp', fmopenread);
+  wei := 0;
+  FileRead(grp, grpmd5[0], 32);
+  jiemi(@grpmd5,32,wei);
   FileRead(grp, Sdata[0], len * 64 * 64 * 6 * 2);
   FileClose(grp);
-  wei := 0;
+
   data1 := @Sdata[0];
   for i := 0 to len * 64 * 64 * 6 * 2 - 1 do
   begin
@@ -1342,12 +1527,14 @@ begin
   if num = 0 then
     filename := 'Alldef';
   grp := FileOpen('save\' + filename + '.grp', fmopenread);
+  wei := 0;
 
-
+  FileRead(grp, grpmd5[0], 32);
+  jiemi(@grpmd5,32,wei);  
   FileRead(grp, Ddata[0], len * 400 * 18 * 2);
   FileClose(grp);
 
-  wei := 0;
+
   data1 := @Ddata[0];
   for i := 0 to len * 400 * 18 * 2 - 1 do
   begin
@@ -1404,9 +1591,9 @@ begin
     FileRead(grp, wujishu[0], M_idx[5] - M_idx[4]);
     FileRead(grp, Rtishi[0], M_idx[6] - M_idx[5]);
 
-    FileRead(grp, RccRole.Count, 2);
-    setlength(RccRole.adds, RccRole.Count);
-    FileRead(grp, RccRole.adds[0], RccRole.Count * 4 * 2);
+    FileRead(grp, TimeTrigger.Count, 2);
+    setlength(TimeTrigger.adds, TimeTrigger.Count);
+    FileRead(grp, TimeTrigger.adds[0], TimeTrigger.Count * 11 * 2);
 
 {$O-}for i1 := 0 to 19 do
     begin
@@ -1454,32 +1641,69 @@ begin
   loadrenwus;
   if battlemode > 2 then battlemode := 2;
   MAX_LEVEL := 30;
-
+  for i :=0 to MAX_ITEM_AMOUNT - 1 do
+  begin
+    RitemList_a[i].Number:=0;
+    RitemList_a[i].Amount:=0;
+  end;
+  for i:=0 to length(Rrole) -1 do
+  begin
+    fillchar(Rrole_a[i].Data[0],sizeof(Trole),0);
+  end;
 end;
 
 //加密\解密
 
 procedure jiami(filename: string);
 var
-  f, len, i: integer;
-  a: array of byte;
+  f, len,len1, i: integer;
   key, pass: byte;
+  md5:string;
+  savedata:Tsave;
 begin
   key := 182;
   F := FileOpen(filename, fmopenread);
   len := FileSeek(f, 0, 2);
   FileSeek(f, 0, 0);
-  setlength(a, len);
-  FileRead(F, a[0], len);
+  setlength(savedata.a, len);
+  savedata.len:=len;
+  FileRead(F, savedata.a[0], len);
   FileClose(F);
-  for I := 0 to len - 1 do
+  md5:=getMD5HashString(savedata);
+  len1:=length(md5);
+  savedata.len:=savedata.len + len1;
+  setlength(savedata.a,savedata.len);
+  for i:=savedata.len - 1 downto len1 do
+  begin
+    savedata.a[i]:=savedata.a[i-len1];
+  end;
+  for i:=0 to len1 - 1 do
+  begin
+    savedata.a[i]:=byte(md5[i + 1]);
+  end;
+  for I := 0 to savedata.len - 1 do
   begin
     pass := key shl (i mod 5);
-    a[i] := a[i] xor pass;
+    savedata.a[i] := savedata.a[i] xor pass;
   end;
   F := filecreate(filename);
-  FileWrite(f, a[0], len);
+  FileWrite(f, savedata.a[0], savedata.len);
   FileClose(f);
+end;
+procedure jiemi(data:pbyte;len:integer;var wei:integer);
+var
+  i: integer;
+  key, pass: byte;
+begin
+  key := 182;
+
+  for i := 0 to len - 1 do
+  begin
+    pass := key shl (wei mod 5);
+    data^ := data^ xor pass;
+    Inc(data);
+    Inc(wei);
+  end;
 
 end;
 
@@ -1497,7 +1721,16 @@ var
   M6len: array[0..19] of array[0..3] of smallint;
 begin
   Rkey := uint16(random($FFFF));
-
+  CheckLoadCheat;
+  for i :=0 to MAX_ITEM_AMOUNT - 1 do
+  begin
+    RitemList_a[i].Number:=0;
+    RitemList_a[i].Amount:=0;
+  end;
+  for i:=0 to length(Rrole) -1 do
+  begin
+    fillchar(Rrole_a[i].Data[0],sizeof(Trole),0);
+  end;
   SaveNum := num;
   filename := 'R' + IntToStr(num);
   if num = 0 then
@@ -1575,7 +1808,7 @@ begin
   M_idx[4] := M_idx[3] + 10 * 2;
   M_idx[5] := M_idx[4] + length(wujishu) * 2;
   M_idx[6] := M_idx[5] + length(Rtishi) * 6;
-  M_idx[7] := M_idx[6] + 2 + RccRole.Count * 2 * 4;
+  M_idx[7] := M_idx[6] + 2 + TimeTrigger.Count * 2 * 11;
   M_idx[8] := M_idx[7];
   for i1 := 0 to 19 do
   begin
@@ -1601,8 +1834,8 @@ begin
   FileWrite(mgrp, rdarr3[0], M_idx[4] - M_idx[3]);
   FileWrite(mgrp, wujishu[0], M_idx[5] - M_idx[4]);
   FileWrite(mgrp, Rtishi[0], M_idx[6] - M_idx[5]);
-  FileWrite(mgrp, RccRole.Count, 2);
-  FileWrite(mgrp, RccRole.adds[0], RccRole.Count * 4 * 2);
+  FileWrite(mgrp, TimeTrigger.Count, 2);
+  FileWrite(mgrp, TimeTrigger.adds[0], TimeTrigger.Count * 11 * 2);
   for i1 := 0 to 19 do
   begin
     FileWrite(mgrp, MPBdata[i1], 14);
@@ -1673,7 +1906,7 @@ begin
     //如果当前处于标题画面, 则退出, 用于战斗失败
     if where >= 3 then
     begin
-      break;
+      exit;
     end;
     //主地图动态效果, 实际仅有主角的动作,luke增加小貼士
     {if n >100 then
@@ -1860,6 +2093,10 @@ begin
         begin
           //event.key.keysym.sym:=0;
           newMenuEsc;
+          if where >= 3 then
+          begin
+            exit;
+          end;
           nowstep := -1;
           walking := 0;
         end;
@@ -2179,20 +2416,23 @@ end;}
 
 function WalkInScene(Open: integer): integer;
 var
-  grp, idx, offset, axp, ayp, just, i3, i1, i2, x, y, old, id: integer;
+  grp, idx, offset, axp, ayp, just, i3, i1, i2, x, y,x1,y1,w1, old, id,tmp,ev: integer;
   Sx1, Sy1, updatearea, r, s, i, menu, walking, PreScene, speed: integer;
   filename: string;
   Scenename: WideString;
   now, next_time, next_time2, before: uint32;
   isdraw: boolean;
   pos: tposition;
+  tmenu:array of smallint;
   //UpDate: PSDL_Thread;
 begin
   //UpDate:=SDL_CreateThread(@UpdateSceneAmi, nil);
   //LockScene:=false;
 
   Where := 1;
-
+  x1:=360;
+  y1:=120;
+  w1:=60;
   Rrole[0].weizhi := CurScene;
 
   next_time := SDL_GetTicks;
@@ -2257,7 +2497,7 @@ begin
 
     if where >= 3 then
     begin
-      break;
+      exit;
     end;
     if where = 0 then
     begin
@@ -2428,11 +2668,98 @@ begin
           if (x > -1) and (x < 64) and (y > -1) and (y < 64) then
             if (SData[CurScene, 3, x, y] >= 0) and IsEventActive(CurScene, SData[CurScene, 3, x, y]) then
             begin
-              CurEvent := SData[CurScene, 3, x, y];
               walking := 0;
-              if (DData[CurScene, CurEvent, 2] >= 0) then
+              CurEvent := SData[CurScene, 3, x, y];
+              if (DData[CurScene, CurEvent, 0] > 9) then
               begin
-                CallEvent(DData[CurScene, SData[CurScene, 3, x, y], 2]);
+                x50[29000]:= DData[CurScene, CurEvent, 0] div 10;
+              end;
+              if (DData[CurScene, CurEvent, 0] > 9) and (Rrole[DData[CurScene, CurEvent, 0] div 10].MRevent = 1) then
+              begin
+                tmp:=0;
+                setlength(menuString, tmp + 1);
+                setlength(menuEngString, 0);
+                menuString[tmp] := '對話';
+                setlength(tmenu, tmp + 1);
+                tmenu[tmp]:=0;
+                if Rrole[DData[CurScene, CurEvent, 0] div 10].AllEvent[1] > 0 then
+                begin
+                  tmp:=tmp + 1;
+                  setlength(menuString, tmp + 1);
+                  menuString[tmp] := '狀態';
+                  setlength(tmenu, tmp + 1);
+                  tmenu[tmp]:=1;
+                end;
+                if Rrole[DData[CurScene, CurEvent, 0] div 10].AllEvent[2] > 0 then
+                begin
+                  tmp:=tmp + 1;
+                  setlength(menuString, tmp + 1);
+                  menuString[tmp] := '入隊';
+                  setlength(tmenu, tmp + 1);
+                  tmenu[tmp]:=2;
+                end;
+                if Rrole[DData[CurScene, CurEvent, 0] div 10].AllEvent[3] > 0 then
+                begin
+                  tmp:=tmp + 1;
+                  setlength(menuString, tmp + 1);
+                  menuString[tmp] := '切磋';
+                  setlength(tmenu, tmp + 1);
+                  tmenu[tmp]:=3;
+                end;
+                if Rrole[DData[CurScene, CurEvent, 0] div 10].AllEvent[4] > 0 then
+                begin
+                  tmp:=tmp + 1;
+                  setlength(menuString, tmp + 1);
+                  menuString[tmp] := '學習';
+                  setlength(tmenu, tmp + 1);
+                  tmenu[tmp]:=4;
+                end;
+                ev:=0;
+                if (tmp > 0) or (Rrole[DData[CurScene, CurEvent, 0] div 10].AllEvent[0] > 0) then
+                begin
+                  ev:=CommonMenu(x1, y1, w1, tmp, 0);
+                end;
+                if ev < 0 then
+                  ev := 0;
+                case tmenu[ev] of
+                  0:
+                  begin
+                    if Rrole[DData[CurScene, CurEvent, 0] div 10].AllEvent[0] > 0 then
+                    begin
+                    
+                      CallEvent(Rrole[DData[CurScene, CurEvent, 0] div 10].AllEvent[0]);
+                    end
+                    else
+                    begin
+
+                      if (DData[CurScene, CurEvent, 2] >= 0) then
+                      begin
+                        CallEvent(DData[CurScene, SData[CurScene, 3, x, y], 2]);
+                      end;
+                    end;
+                  end;
+                  1:
+                  begin
+                    ShowStatus(DData[CurScene, CurEvent, 0] div 10);
+                    waitanykey;
+                  end;
+                  2..9:
+                  begin
+                    if Rrole[DData[CurScene, CurEvent, 0] div 10].AllEvent[tmenu[ev]] > 0 then
+                    begin
+
+                      CallEvent(Rrole[DData[CurScene, CurEvent, 0] div 10].AllEvent[tmenu[ev]]);
+                    end;
+                  end;
+                end;
+              end
+              else
+              begin
+
+                if (DData[CurScene, CurEvent, 2] >= 0) then
+                begin
+                  CallEvent(DData[CurScene, SData[CurScene, 3, x, y], 2]);
+                end;
               end;
             end;
           CurEvent := -1;
@@ -2612,6 +2939,10 @@ begin
         if event.button.button = SDL_BUTTON_RIGHT then
         begin
           newmenuesc;
+          if where >= 3 then
+          begin
+            exit;
+          end;
           nowstep := 0;
           walking := 0;
         end;
@@ -2948,7 +3279,7 @@ var
   //point似乎未使用, atlu为处于左上角的物品在列表中的序号, x, y为光标位置
   //col, row为总列数和行数
 begin
-  col := 6;
+  col := 5;
   row := 3;
   x := 0;
   y := 0;
@@ -3126,18 +3457,18 @@ begin
       end;
       SDL_MOUSEMOTION:
       begin
-        if (event.button.x < 122) then
+        if (event.button.x < 166) then
         begin
           //   result := false;
           if where <> 2 then break;
         end;
-        if (event.button.x >= 110) and (event.button.x < 612) and (event.button.y > 90) and
-          (event.button.y < 316) then
+        if (event.button.x >= 167) and (event.button.x < 622) and (event.button.y >= 46) and
+          (event.button.y < 337) then
         begin
           xp := x;
           yp := y;
-          x := (event.button.x - 115) div 82;
-          y := (event.button.y - 95) div 82;
+          x := (event.button.x - 167) div 91;
+          y := (event.button.y - 46) div 97;
           if x >= col then
             x := col - 1;
           if y >= row then
@@ -3153,7 +3484,7 @@ begin
             SDL_UpdateRect2(screen, 0, 0, screen.w, screen.h);
           end;
         end;
-        if (event.button.x >= 110) and (event.button.x < 612) and (event.button.y > 312) then
+        if (event.button.x >= 167) and (event.button.x < 622) and (event.button.y > 336) then
         begin
           //atlu := atlu+col;
           y := y + 1;
@@ -3168,7 +3499,7 @@ begin
           ShowMenuItem(row, col, x, y, atlu);
           SDL_UpdateRect2(screen, 0, 0, screen.w, screen.h);
         end;
-        if (event.button.x >= 110) and (event.button.x < 612) and (event.button.y < 90) then
+        if (event.button.x >= 167) and (event.button.x < 622) and (event.button.y < 46) then
         begin
           if atlu > 0 then
             atlu := atlu - col;
@@ -3189,7 +3520,7 @@ var
   //point似乎未使用, atlu为处于左上角的物品在列表中的序号, x, y为光标位置
   //col, row为总列数和行数
 begin
-  col := 6;
+  col := 5;
   row := 3;
   x := 0;
   y := 0;
@@ -3366,18 +3697,18 @@ begin
       end;
       SDL_MOUSEMOTION:
       begin
-        if (event.button.x < 122) then
+        if (event.button.x < 166) then
         begin
           //   result := false;
           if where <> 2 then break;
         end;
-        if (event.button.x >= 110) and (event.button.x < 612) and (event.button.y > 90) and
-          (event.button.y < 316) then
+        if (event.button.x >= 167) and (event.button.x < 622) and (event.button.y >= 48) and
+          (event.button.y < 339) then
         begin
           xp := x;
           yp := y;
-          x := (event.button.x - 115) div 82;
-          y := (event.button.y - 95) div 82;
+          x := (event.button.x - 167) div 91;
+          y := (event.button.y - 48) div 97;
           if x >= col then
             x := col - 1;
           if y >= row then
@@ -3393,7 +3724,7 @@ begin
             SDL_UpdateRect2(screen, 0, 0, screen.w, screen.h);
           end;
         end;
-        if (event.button.x >= 110) and (event.button.x < 612) and (event.button.y > 312) then
+        if (event.button.x >= 167) and (event.button.x < 622) and (event.button.y > 339) then
         begin
           //atlu := atlu+col;
           y := y + 1;
@@ -3408,7 +3739,7 @@ begin
           ShowMenuItem(row, col, x, y, atlu);
           SDL_UpdateRect2(screen, 0, 0, screen.w, screen.h);
         end;
-        if (event.button.x >= 110) and (event.button.x < 612) and (event.button.y < 90) then
+        if (event.button.x >= 167) and (event.button.x < 622) and (event.button.y < 48) then
         begin
           if atlu > 0 then
             atlu := atlu - col;
@@ -3513,14 +3844,10 @@ begin
   if where = 2 then
   begin
     Redraw;
+    display_imgFromSurface(MENUITEM_PIC, 152, 30,152,30,screen.w,screen.h);
   end
   else
-    display_imgFromSurface(MENUITEM_PIC, 110, 0, 110, 0, 530, 440);
-  //ReDraw;
-  DrawRectangle(110 + 12, 16, 499, 25, 0, ColColor(0, 255), 40);
-  DrawRectangle(110 + 12, 46, 499, 25, 0, ColColor(0, 255), 40);
-  DrawRectangle(110 + 12, 76, 499, 252, 0, ColColor(0, 255), 40);
-  DrawRectangle(110 + 12, 335, 499, 86, 0, ColColor(0, 255), 40);
+    reshowscreen(0);
   //i:=0;
   for i1 := 0 to row - 1 do
     for i2 := 0 to col - 1 do
@@ -3529,7 +3856,7 @@ begin
       if (listnum >= 0) and (listnum < MAX_ITEM_AMOUNT) and (RItemlist[listnum].Number < length(Ritem)) and
         (RItemlist[listnum].Number >= 0) then
       begin
-        DrawItemPic(RItemlist[listnum].Number, i2 * 82 + 12 + 115, i1 * 82 + 95 - 14);
+        DrawItemPic(RItemlist[listnum].Number, i2 * 91 + 170, i1 * 97 + 48);
         //DrawMPic(ITEM_BEGIN_PIC + RItemlist[listnum].Number, i2 * 42 + 115, i1 * 42 + 95);
       end;
     end;
@@ -3539,32 +3866,31 @@ begin
   if (listnum < MAX_ITEM_AMOUNT) and (listnum >= 0) and (RItemlist[listnum].Amount > 0) and
     (RItemlist[listnum].Number < length(Ritem)) and (RItemlist[listnum].Number >= 0) then
   begin
-    str := format('%5d', [RItemlist[listnum].Amount]);
-    DrawEngShadowText(@str[1], 431 + 62 + 12, 32 - 14, ColColor(0, $64), ColColor(0, $66));
     len := length(pchar(@Ritem[item].Name));
-    drawgbkshadowtext(@Ritem[item].Name, 357 - len * 5 + 12, 32 - 14, ColColor(0, $21), ColColor(0, $23));
-    len := length(pchar(@Ritem[item].Introduction));
-    drawgbkshadowtext(@Ritem[item].Introduction, 357 - len * 5 + 12, 62 - 14, ColColor(0, $5), ColColor(0, $7));
-    DrawShadowText(@words[Ritem[item].ItemType, 1], 97 + 12, 315 + 36 - 14, ColColor(0, $21), ColColor(0, $23));
-    //如有人使用则显示
-    if Ritem[item].User >= 0 then
+    str:=gbktounicode(@Ritem[item].Name[0]);
+    drawshadowtext(@str[1], 201 - len * 5, 349,18, ColColor(0, $21), ColColor(0, $23));
+
+    if item = COMPASS_ID then //如是罗盘则显示坐标
     begin
-      str := '使用人：';
-      DrawShadowText(@str[1], 187 + 12, 315, ColColor(0, $21), ColColor(0, $23));
-      drawgbkshadowtext(@Rrole[Ritem[item].User].Name, 277 + 12, 315 + 36 - 14, ColColor(0, $64), ColColor(0, $66));
-    end;
-    //如是罗盘则显示坐标
-    if item = COMPASS_ID then
+      str := '你的位置:';
+      DrawShadowText(@str[1], 250, 349,18, ColColor(0, $21), ColColor(0, $23));
+      str := format('%3d,%3d', [My, Mx]);
+      DrawEngShadowText(@str[1], 345, 347, ColColor(0, 122), ColColor(0, 124));
+      str := '船的位置:';
+      DrawShadowText(@str[1], 420, 349,18, ColColor(0, $21), ColColor(0, $23));
+      str := format('%3d,%3d', [Shipx, shipy]);
+      DrawEngShadowText(@str[1], 515, 347,ColColor(0, 122), ColColor(0, 124));
+    end
+    else
     begin
-      str := '你的位置：';
-      DrawShadowText(@str[1], 187 + 12, 315 + 36 - 14, ColColor(0, $21), ColColor(0, $23));
-      str := format('%3d, %3d', [My, Mx]);
-      DrawEngShadowText(@str[1], 300 + 12, 315 + 36 - 14, ColColor(0, $64), ColColor(0, $66));
-      str := '船的位置：';
-      DrawShadowText(@str[1], 387 + 12, 315 + 36 - 14, ColColor(0, $21), ColColor(0, $23));
-      str := format('%3d, %3d', [Shipx, shipy]);
-      DrawEngShadowText(@str[1], 500 + 12, 315 + 36 - 14, ColColor(0, $64), ColColor(0, $66));
+      DrawShadowText(@words[Ritem[item].ItemType, 1], 250, 349,18, ColColor(0, 70), ColColor(0, 72));
+      len := length(pchar(@Ritem[item].Introduction));
+      str:=gbktounicode(@Ritem[item].Introduction[0]);
+      drawshadowtext(@str[1], 450 - len * 5, 349, 18,ColColor(0, $6), ColColor(0, $8));
+      str := format('%5d', [RItemlist[listnum].Amount]);
+      DrawEngShadowText(@str[1], 545, 347, ColColor(124), ColColor(122));
     end;
+
   end;
 
   if (RItemlist[listnum].Amount > 0) and (listnum < MAX_ITEM_AMOUNT) and (listnum >= 0) and
@@ -3613,10 +3939,7 @@ begin
       len3 := len3 + 1;
     end;
 
-    if len2 + len3 > 0 then
-      //   drawrectangle(110+12, 344 + 36-14, 499, 20 * ((len2 + 2) div 3 + (len3 + 2) div 3) + 5, 0, colcolor(255), 30);
-
-      i1 := 0;
+    i1 := 0;
     for i := 0 to 23 do
     begin
       if (p2[i] = 1) then
@@ -3634,21 +3957,17 @@ begin
           str := '+' + format('%d', [Ritem[item].Data[45 + i]])
         else str := format('%d', [Ritem[item].Data[45 + i]]);
 
-        DrawShadowText(@words2[i][1], 97 + i1 mod 5 * 98 + 12, i1 div 5 * 20 + 355, ColColor(0, $5), ColColor(0, $7));
-        DrawShadowText(@str[1], 147 + i1 mod 5 * 98 + 12, i1 div 5 * 20 + 355, ColColor(0, $64), ColColor(0, $66));
+        DrawShadowText(@words2[i][1], 153 + (i1 mod 5) * 92, 383 + 20 * (i1 div 5),18, ColColor(0, $6), ColColor(0, $8));
+        DrawShadowText(@str[1], 203 + (i1 mod 5) * 92, 383 + 20 * (i1 div 5),18, ColColor(0, 122), ColColor(0, 124));
         i1 := i1 + 1;
       end;
     end;
-
-
-
-
-    i1 := 0;
     for i := 0 to 13 do
     begin
+      if (i1 >= 10) then
+        break;
       if (p3[i] = 1) then
       begin
-
         if i = 0 then
           case Ritem[item].NeedMPType of
             0: str := '陽';
@@ -3665,45 +3984,44 @@ begin
           str := '' + format('%d', [Ritem[item].Data[69 + i]])
         else str := format('%d', [Ritem[item].Data[69 + i]]);
 
-        DrawShadowText(@words3[i][1], 97 + i1 mod 5 * 98 + 12, ((len2 + 4) div 5 + i1 div 5) *
-          20 + 355, ColColor(0, $FF), ColColor(0, $50));
-        DrawShadowText(@str[1], 147 + i1 mod 5 * 98 + 12, ((len2 + 4) div 5 + i1 div 5) *
-          20 + 355, ColColor(0, $64), ColColor(0, $66));
+        DrawShadowText(@words3[i][1], 153 + i1 mod 5 * 92, (i1 div 5) *
+          20 + 383, ColColor(0, 7), ColColor(0, 8));
+        DrawShadowText(@str[1], 203 + i1 mod 5 * 92, (i1 div 5) *
+          20 + 383, ColColor(0, 122), ColColor(0, 124));
         i1 := i1 + 1;
       end;
     end;
 
-    if (Ritem[item].BattleEffect > 0) then
+    if ((Ritem[item].BattleEffect > 0)) and (i1 < 10) then
     begin
       case Ritem[item].BattleEffect of
-        1: str := GBKtoUnicode('裝備特效：體力不減');
-        2: str := GBKtoUnicode('裝備特效：女性武功威力加成');
-        3: str := GBKtoUnicode('裝備特效：飲酒功效加倍');
-        4: str := GBKtoUnicode('裝備特效：隨機傷害轉移');
-        5: str := GBKtoUnicode('裝備特效：隨機傷害反噬');
-        6: str := GBKtoUnicode('裝備特效：內傷免疫');
-        7: str := GBKtoUnicode('裝備特效：殺傷體力');
-        8: str := GBKtoUnicode('裝備特效：增加閃躲幾率');
-        9: str := GBKtoUnicode('裝備特效：攻擊力隨等级循环增减');
-        10: str := GBKtoUnicode('裝備特效：內力消耗減少');
-        11: str := GBKtoUnicode('裝備特效：每回合恢復生命');
-        12: str := GBKtoUnicode('裝備特效：負面狀態免疫');
-        13: str := GBKtoUnicode('裝備特效：全部武功威力加成');
-        14: str := GBKtoUnicode('裝備特效：隨機二次攻擊');
-        15: str := GBKtoUnicode('裝備特效：拳掌武功威力加成');
-        16: str := GBKtoUnicode('裝備特效：劍術武功威力加成');
-        17: str := GBKtoUnicode('裝備特效：刀法武功威力加成');
-        18: str := GBKtoUnicode('裝備特效：奇門武功威力加成');
-        19: str := GBKtoUnicode('裝備特效：增加內傷幾率');
-        20: str := GBKtoUnicode('裝備特效：增加封穴幾率');
-        21: str := GBKtoUnicode('裝備特效：攻擊微量吸血');
-        22: str := GBKtoUnicode('裝備特效：攻擊距離增加');
-        23: str := GBKtoUnicode('裝備特效：每回合恢復內力');
-        24: str := GBKtoUnicode('裝備特效：使用暗器距離增加');
-        25: str := GBKtoUnicode('裝備特效：附加殺傷吸收內力');
+        1: str := GBKtoUnicode('體力不減');
+        2: str := GBKtoUnicode('女性強武');
+        3: str := GBKtoUnicode('飲酒加倍');
+        4: str := GBKtoUnicode('隨機挪移');
+        5: str := GBKtoUnicode('隨機反噬');
+        6: str := GBKtoUnicode('內傷免疫');
+        7: str := GBKtoUnicode('殺傷體力');
+        8: str := GBKtoUnicode('閃躲增強');
+        9: str := GBKtoUnicode('強弱循環');
+        10: str := GBKtoUnicode('減少內耗');
+        11: str := GBKtoUnicode('恢復生命');
+        12: str := GBKtoUnicode('免疫狀態');
+        13: str := GBKtoUnicode('威力強化');
+        14: str := GBKtoUnicode('二次攻擊');
+        15: str := GBKtoUnicode('拳掌加強');
+        16: str := GBKtoUnicode('劍術加強');
+        17: str := GBKtoUnicode('刀法加強');
+        18: str := GBKtoUnicode('奇門加強');
+        19: str := GBKtoUnicode('內傷加強');
+        20: str := GBKtoUnicode('封穴加強');
+        21: str := GBKtoUnicode('微量吸血');
+        22: str := GBKtoUnicode('增遠攻擊');
+        23: str := GBKtoUnicode('恢復內力');
+        24: str := GBKtoUnicode('暗器增遠');
+        25: str := GBKtoUnicode('吸收內力');
       end;
-      DrawShadowText(@str[1], 97 + 12, ((len2 + 4) div 5 + (i1 + 4) div 5) * 20 + 355,
-        ColColor(0, $5), ColColor(0, $7));
+      DrawShadowText(@str[1], 153 + i1 mod 5 * 92, (i1 div 5) *20 + 383,ColColor(0, $6), ColColor(0, $8));
     end;
   end;
 
@@ -3720,20 +4038,20 @@ var
 begin
   for i := 0 to 79 do
   begin
-    PutPixel(screen, x * 82 + 115 + 12 + i, y * 82 + 97 - 14, ColColor(0, 255));
-    PutPixel(screen, x * 82 + 115 + 12 + i, y * 82 + 91 + 81 - 14, ColColor(0, 255));
-    PutPixel(screen, x * 82 + 117 + 12, y * 82 + 95 + i - 14, ColColor(0, 255));
-    PutPixel(screen, x * 82 + 111 + 12 + 81, y * 82 + 95 + i - 14, ColColor(0, 255));
+    PutPixel(screen, x * 91 + 171 + i, y * 97 + 50, ColColor(0, 255));
+    PutPixel(screen, x * 91 + 171 + i, y * 97 + 44 + 81, ColColor(0, 255));
+    PutPixel(screen, x * 91 + 173, y * 97 + 48 + i, ColColor(0, 255));
+    PutPixel(screen, x * 91 + 167 + 81, y * 97 + 48 + i, ColColor(0, 255));
 
-    PutPixel(screen, x * 82 + 115 + 12 + i, y * 82 + 96 - 14, ColColor(0, 255));
-    PutPixel(screen, x * 82 + 115 + 12 + i, y * 82 + 92 + 81 - 14, ColColor(0, 255));
-    PutPixel(screen, x * 82 + 116 + 12, y * 82 + 95 + i - 14, ColColor(0, 255));
-    PutPixel(screen, x * 82 + 112 + 12 + 81, y * 82 + 95 + i - 14, ColColor(0, 255));
+    PutPixel(screen, x * 91 + 171 + i, y * 97 + 49 ,ColColor(0, 255));
+    PutPixel(screen, x * 91 + 171 + i, y * 97 + 45 + 81, ColColor(0, 255));
+    PutPixel(screen, x * 91 + 172, y * 97 + 48 + i, ColColor(0, 255));
+    PutPixel(screen, x * 91 + 168 + 81, y * 97 + 48 + i, ColColor(0, 255));
 
-    PutPixel(screen, x * 82 + 115 + 12 + i, y * 82 + 95 - 14, ColColor(0, 255));
-    PutPixel(screen, x * 82 + 115 + 12 + i, y * 82 + 93 + 81 - 14, ColColor(0, 255));
-    PutPixel(screen, x * 82 + 115 + 12, y * 82 + 95 + i - 14, ColColor(0, 255));
-    PutPixel(screen, x * 82 + 113 + 12 + 81, y * 82 + 95 + i - 14, ColColor(0, 255));
+    PutPixel(screen, x * 91 + 171 + i, y * 97 + 48, ColColor(0, 255));
+    PutPixel(screen, x * 91 + 171 + i, y * 97 + 46 + 81, ColColor(0, 255));
+    PutPixel(screen, x * 91 + 171, y * 97 + 48 + i, ColColor(0, 255));
+    PutPixel(screen, x * 91 + 169 + 81, y * 97 + 48 + i, ColColor(0, 255));
   end;
 
 end;
@@ -3742,7 +4060,7 @@ end;
 
 procedure UseItem(inum: integer);
 var
-  x, y, menu, rnum, p: integer;
+  x, y, menu, rnum, p,tmp: integer;
   str, str1: WideString;
 begin
   CurItem := inum;
@@ -3804,6 +4122,11 @@ begin
                 Ritem[Rrole[rnum].Equip[p]].ExpOfMagic := GetMagicLevel(rnum, Ritem[Rrole[rnum].Equip[p]].Magic);
                 StudyMagic(rnum, Ritem[Rrole[rnum].Equip[p]].Magic, 0, 0, 1);
               end;
+              Rrole_a[rnum].MaxHP:=Rrole_a[rnum].MaxHP - Ritem[Rrole[rnum].Equip[p]].AddMaxHP;
+              Rrole_a[rnum].CurrentHP:=Rrole_a[rnum].CurrentHP - Ritem[Rrole[rnum].Equip[p]].AddMaxHP;
+              Rrole_a[rnum].MaxMP:=Rrole_a[rnum].MaxMP - Ritem[Rrole[rnum].Equip[p]].AddMaxMP;
+              Rrole_a[rnum].CurrentMP:=Rrole_a[rnum].CurrentMP - Ritem[Rrole[rnum].Equip[p]].AddMaxMP;
+
               Dec(Rrole[rnum].MaxHP, Ritem[Rrole[rnum].Equip[p]].AddMaxHP);
               Dec(Rrole[rnum].CurrentHP, Ritem[Rrole[rnum].Equip[p]].AddMaxHP);
               Dec(Rrole[rnum].MaxMP, Ritem[Rrole[rnum].Equip[p]].AddMaxMP);
@@ -3811,17 +4134,29 @@ begin
               instruct_32(Rrole[rnum].Equip[p], 1);
             end;
             instruct_32(inum, -1);
+            Rrole_a[rnum].Equip[p] := Rrole_a[rnum].Equip[p] + inum - Rrole[rnum].Equip[p];
             Rrole[rnum].Equip[p] := inum;
 
             if Ritem[Rrole[rnum].Equip[p]].Magic > 0 then
               StudyMagic(rnum, 0, Ritem[Rrole[rnum].Equip[p]].Magic, Ritem[Rrole[rnum].Equip[p]].ExpOfMagic, 1);
 
+            tmp:=Rrole[rnum].MaxHP;
             Inc(Rrole[rnum].MaxHP, Ritem[Rrole[rnum].Equip[p]].AddMaxHP);
+            Rrole_a[rnum].MaxHP:=Rrole_a[rnum].MaxHP + Rrole[rnum].MaxHP - tmp;
+
+            tmp:=Rrole[rnum].CurrentHP;
             Inc(Rrole[rnum].CurrentHP, Ritem[Rrole[rnum].Equip[p]].AddMaxHP);
+            Rrole[rnum].CurrentHP := max(1, Rrole[rnum].CurrentHP);
+            Rrole_a[rnum].CurrentHP:=Rrole_a[rnum].CurrentHP + Rrole[rnum].CurrentHP - tmp;
+            tmp:=Rrole[rnum].MaxMP;
             Inc(Rrole[rnum].MaxMP, Ritem[Rrole[rnum].Equip[p]].AddMaxMP);
+            Rrole_a[rnum].MaxMP:=Rrole_a[rnum].MaxMP + Rrole[rnum].MaxMP - tmp;
+
+            tmp:=Rrole[rnum].CurrentMP;
             Inc(Rrole[rnum].CurrentMP, Ritem[Rrole[rnum].Equip[p]].AddMaxMP);
             Rrole[rnum].CurrentMP := max(1, Rrole[rnum].CurrentMP);
-            Rrole[rnum].CurrentHP := max(1, Rrole[rnum].CurrentHP);
+            Rrole_a[rnum].CurrentMP:=Rrole_a[rnum].CurrentMP + Rrole[rnum].CurrentMP - tmp;
+
           end
           else
           begin
@@ -3850,6 +4185,7 @@ begin
               if Rrole[rnum].PracticeBook >= 0 then
                 instruct_32(Rrole[rnum].PracticeBook, 1);
               instruct_32(inum, -1);
+              Rrole_a[rnum].PracticeBook :=Rrole_a[rnum].PracticeBook + inum - Rrole[rnum].PracticeBook;
               Rrole[rnum].PracticeBook := inum;
               //Rrole[rnum].ExpForBook := 0;
             end;
@@ -3884,7 +4220,7 @@ end;
 
 procedure MPUseItem(inum: integer);
 var
-  x, y, menu, rnum, p: integer;
+  x, y, menu, rnum, p, tmp: integer;
   str, str1: WideString;
 begin
   CurItem := inum;
@@ -3909,6 +4245,11 @@ begin
                 Ritem[Rrole[rnum].Equip[p]].ExpOfMagic := GetMagicLevel(rnum, Ritem[Rrole[rnum].Equip[p]].Magic);
                 StudyMagic(rnum, Ritem[Rrole[rnum].Equip[p]].Magic, 0, 0, 1);
               end;
+              Rrole_a[rnum].MaxHP:=Rrole_a[rnum].MaxHP - Ritem[Rrole[rnum].Equip[p]].AddMaxHP;
+              Rrole_a[rnum].CurrentHP:=Rrole_a[rnum].CurrentHP - Ritem[Rrole[rnum].Equip[p]].AddMaxHP;
+              Rrole_a[rnum].MaxMP:=Rrole_a[rnum].MaxMP - Ritem[Rrole[rnum].Equip[p]].AddMaxMP;
+              Rrole_a[rnum].CurrentMP:=Rrole_a[rnum].CurrentMP - Ritem[Rrole[rnum].Equip[p]].AddMaxMP;
+
               Dec(Rrole[rnum].MaxHP, Ritem[Rrole[rnum].Equip[p]].AddMaxHP);
               Dec(Rrole[rnum].CurrentHP, Ritem[Rrole[rnum].Equip[p]].AddMaxHP);
               Dec(Rrole[rnum].MaxMP, Ritem[Rrole[rnum].Equip[p]].AddMaxMP);
@@ -3916,17 +4257,28 @@ begin
               instruct_32(Rrole[rnum].Equip[p], 1);
             end;
             instruct_32(inum, -1);
+            Rrole_a[rnum].Equip[p] := Rrole_a[rnum].Equip[p] + inum - Rrole[rnum].Equip[p];
             Rrole[rnum].Equip[p] := inum;
 
             if Ritem[Rrole[rnum].Equip[p]].Magic > 0 then
               StudyMagic(rnum, 0, Ritem[Rrole[rnum].Equip[p]].Magic, Ritem[Rrole[rnum].Equip[p]].ExpOfMagic, 1);
 
+            tmp:=Rrole[rnum].MaxHP;
             Inc(Rrole[rnum].MaxHP, Ritem[Rrole[rnum].Equip[p]].AddMaxHP);
+            Rrole_a[rnum].MaxHP:=Rrole_a[rnum].MaxHP + Rrole[rnum].MaxHP - tmp;
+
+            tmp:=Rrole[rnum].CurrentHP;
             Inc(Rrole[rnum].CurrentHP, Ritem[Rrole[rnum].Equip[p]].AddMaxHP);
+            Rrole[rnum].CurrentHP := max(1, Rrole[rnum].CurrentHP);
+            Rrole_a[rnum].CurrentHP:=Rrole_a[rnum].CurrentHP + Rrole[rnum].CurrentHP - tmp;
+            tmp:=Rrole[rnum].MaxMP;
             Inc(Rrole[rnum].MaxMP, Ritem[Rrole[rnum].Equip[p]].AddMaxMP);
+            Rrole_a[rnum].MaxMP:=Rrole_a[rnum].MaxMP + Rrole[rnum].MaxMP - tmp;
+
+            tmp:=Rrole[rnum].CurrentMP;
             Inc(Rrole[rnum].CurrentMP, Ritem[Rrole[rnum].Equip[p]].AddMaxMP);
             Rrole[rnum].CurrentMP := max(1, Rrole[rnum].CurrentMP);
-            Rrole[rnum].CurrentHP := max(1, Rrole[rnum].CurrentHP);
+            Rrole_a[rnum].CurrentMP:=Rrole_a[rnum].CurrentMP + Rrole[rnum].CurrentMP - tmp;
           end
           else
           begin
@@ -4259,8 +4611,8 @@ begin
   end
   else
   begin
-    color1 := ColColor($63);
-    color2 := ColColor($66);
+    color1 := ColColor(70);
+    color2 := ColColor(72);
   end;
   str := format('%4d/%4d', [Rrole[rnum].CurrentMP, Rrole[rnum].MaxMP]);
   DrawEngShadowText(@str[1], x + 60, y + 152, color1, color2);
@@ -4407,6 +4759,11 @@ begin
       DrawShadowText(@str[1], x + 340 + 40 * i, y + 5 + 21, ColColor($5), ColColor($7));
       Inc(i);
     end;
+    if i = 0 then
+    begin
+      str := ' 中庸';
+      DrawShadowText(@str[1], x + 340 + 40 * i, y + 5 + 21, ColColor($5), ColColor($7));
+    end;
     DrawShadowText(@strs[26, 1], x + 300, y + 5 + 21 * 2, ColColor(0, $21), ColColor(0, $23));
     i := 0;
     if Rrole[rnum].lwq > 33 then
@@ -4482,8 +4839,6 @@ begin
     9: str := '固執';
   end;
   DrawShadowText(@str[1], x + 340, y + 5 + 21 * 3, ColColor($5), ColColor($7));
-
-
   SDL_UpdateRect2(screen, x, y, 561, 316);
 
 end;
@@ -4524,7 +4879,7 @@ begin
   begin
     CheckBasicEvent;
     if where = 3 then
-      break;
+      exit;
     case event.type_ of
       SDL_KEYUP:
       begin
@@ -4759,22 +5114,29 @@ end;
 procedure EffectMedcine(role1, role2: integer);
 var
   word: WideString;
-  addlife: integer;
+  addlife,tmp: integer;
 begin
   if Rrole[role1].PhyPower < 50 then exit;
   addlife := GetRoleMedcine(role1, True) * (10 - Rrole[role2].Hurt div 8) div 5;
   if Rrole[role2].Hurt - GetRoleMedcine(role1, True) > 20 then
     addlife := 0;
+  tmp:=Rrole[role2].Hurt;
   Rrole[role2].Hurt := Rrole[role2].Hurt - (addlife + 10) div LIFE_HURT;
   if Rrole[role2].Hurt < 0 then
     Rrole[role2].Hurt := 0;
+  Rrole_a[role2].Hurt:=Rrole_a[role2].Hurt + Rrole[role2].Hurt - tmp;
   if addlife > Rrole[role2].MaxHP - Rrole[role2].CurrentHP then
     addlife := Rrole[role2].MaxHP - Rrole[role2].CurrentHP;
+  Rrole_a[role2].CurrentHP := Rrole_a[role2].CurrentHP + addlife;
   Rrole[role2].CurrentHP := Rrole[role2].CurrentHP + addlife;
   if addlife > 0 then
+  begin
     if (not GetEquipState(role1, 1)) and (not GetGongtiState(role1, 1)) then
+    begin
+      Rrole_a[role1].PhyPower := Rrole_a[role1].PhyPower - 3;
       Rrole[role1].PhyPower := Rrole[role1].PhyPower - 3;
-
+    end;
+  end;
 end;
 
 //解毒的效果
@@ -4790,11 +5152,17 @@ begin
     minuspoi := 0
   else if minuspoi > Rrole[role2].Poision then
     minuspoi := Rrole[role2].Poision;
+  Rrole_a[role2].Poision := Rrole_a[role2].Poision - minuspoi;
   Rrole[role2].Poision := Rrole[role2].Poision - minuspoi;
 
   if minuspoi > 0 then
+  begin
     if (not GetEquipState(role1, 1)) and (not GetGongtiState(role1, 1)) then
+    begin
+      Rrole_a[role1].PhyPower := Rrole_a[role1].PhyPower - 3;
       Rrole[role1].PhyPower := Rrole[role1].PhyPower - 3;
+    end;
+  end;
 end;
 
 //使用物品的效果
@@ -4951,6 +5319,7 @@ begin
     end;
     if (i <> 4) and (i <> 21) and (addvalue[i] <> 0) then
     begin
+      Rrole_a[rnum].Data[rolelist[i]] := Rrole_a[rnum].Data[rolelist[i]] + addvalue[i];
       Rrole[rnum].Data[rolelist[i]] := Rrole[rnum].Data[rolelist[i]] + addvalue[i];
       if isshow and ((where = 2) or (Ritem[inum].ItemType = 3)) then
       begin
@@ -4966,7 +5335,11 @@ begin
     //对内力性质特殊处理
     if (i = 4) and (addvalue[i] >= 0) and (Rrole[rnum].Data[40] <> 2) then
     begin
-      if (Rrole[rnum].Data[rolelist[i]] <> 2) then Rrole[rnum].Data[rolelist[i]] := addvalue[i];
+      if (Rrole[rnum].Data[rolelist[i]] <> 2) then
+      begin
+        Rrole_a[rnum].Data[rolelist[i]] :=Rrole_a[rnum].Data[rolelist[i]] + addvalue[i] - Rrole[rnum].Data[rolelist[i]];
+        Rrole[rnum].Data[rolelist[i]] := addvalue[i];
+      end;
 
       if isshow then
       begin
@@ -4982,6 +5355,7 @@ begin
     begin
       if Rrole[rnum].Data[rolelist[i]] <> 1 then
       begin
+        Rrole_a[rnum].Data[rolelist[i]] :=Rrole_a[rnum].Data[rolelist[i]] + 1 - Rrole[rnum].Data[rolelist[i]];
         Rrole[rnum].Data[rolelist[i]] := 1;
         if isshow and ((where = 2) or (Ritem[inum].ItemType <> 3)) then
         begin
@@ -5010,9 +5384,15 @@ begin
   //CurEvent:=num;
   SDL_EventState(SDL_MOUSEMOTION, SDL_enable);
   if debug = 1 then
-    ShowMessage('事件' + IntToStr(num) + '已經觸發');
+  begin
+    writeln('事件' + IntToStr(num) + '已經觸發');
+    //ShowMessage('事件' + IntToStr(num) + '已經觸發');
+  end;
   Cx := Sx;
   Cy := Sy;
+  eventtag:=true;
+  tryevent:=false;
+  EventEndCount:=0;
   xunchou.num:=0;
   setlength(xunchou.rnumlist,0);
   RShowpic.repeated:=-1;
@@ -5044,9 +5424,10 @@ begin
   end;
   i := 0;
   //普通事件写成子程, 需跳转事件写成函数
-  while e[i] >= 0 do
+  while (e[i] >= 0) and (eventtag) do
   begin
     //SDL_EnableKeyRepeat(0, 10);
+
     case e[i] of
       0:
       begin
@@ -5306,7 +5687,9 @@ begin
         p := instruct_50([e[i + 1], e[i + 2], e[i + 3], e[i + 4], e[i + 5], e[i + 6], e[i + 7]]);
         i := i + 8;
         if p < 622592 then
-          i := i + p
+        begin
+          i := i + p;
+        end
         else
         begin
           n := 0;
@@ -5689,7 +6072,7 @@ begin
       end;
       124: //增加或修改任务提示
       begin
-        addrenwu(e[i + 1], e[i + 2], e[i + 3], e[i + 4], e[i + 5]);
+        addrenwutishi(e[i + 1], e[i + 2], e[i + 3], e[i + 4], e[i + 5]);
         i := i + 6;
       end;
       125: //下场战斗增加人员
@@ -5697,6 +6080,47 @@ begin
         AddEnemyNextFight(e[i + 1], e[i + 2], e[i + 3]);
         i := i + 4;
       end;
+      126://比賽
+      begin
+        fightmatch(e[i + 1], e[i + 2], e[i + 3], e[i + 4]);
+        i:= i + 5;
+      end;
+      127://进入堆
+      begin
+        if NOT(pushstack(e[i + 1],e[i + 2])) then
+        begin
+          break;
+        end;
+        i:=i + 3;
+      end;
+      128://弹出堆
+      begin
+        popstack(e[i + 1],e[i + 2]);
+        i:=i + 3;
+      end;
+      129://清空堆
+      begin
+        x50[27999]:=0;
+        i:=i + 1;
+      end;
+      130://新增自动检测任务
+      begin
+        if EventEndCount = 0 then
+          tryrenwu(e[i + 1],e[i + 2],e[i + 3],e[i + 4],e[i + 5],e[i + 6],e[i + 7],e[i + 8]);
+        i:=i + 9;
+        TryEventTmpI:=i;
+      end;
+      131://修改任务
+      begin
+        CHANGErenwu(e[i + 1],e[i + 2],e[i + 3],e[i + 4],e[i + 5],e[i + 6],e[i + 7],e[i + 8]);
+        i:=i + 9;
+      end;
+    end;
+    if (tryevent) and (TryEventTmpI + EventEndCount <= i) then
+    begin
+      tryevent:=false;
+      i:=tryeventtmpI;
+      EventEndCount:=0;
     end;
 
   end;
@@ -5806,7 +6230,7 @@ begin
   //r := CommonMenu(80, 30, 75, 3, r);
   //ShowCommonMenu(15, 15, 75, 3, r);
   //SDL_UpdateRect2(screen, 15, 15, 76, 316);
-  SDL_EnableKeyRepeat(30, (30 * gamespeed) div 10);
+  SDL_EnableKeyRepeat(30, 100+(30 * gamespeed) div 10);
 
 end;
 
@@ -5987,6 +6411,7 @@ begin
   ZoomPic(head_pic[r].pic, 0, 100 + 40, 150 - 60 - 60, 58, 60);
   if Rrole[r].lMagic[p] > 0 then
   begin
+    Rrole_a[r].lMagic[p] := Rrole_a[r].lMagic[p] + 1 - Rrole[r].lMagic[p];
     Rrole[r].lMagic[p] := 1;
     str := '已習得';
     col1 := ColColor(255);
@@ -6076,6 +6501,7 @@ begin
       Rrole[5].lMagic[4]) * 5)) then
       if StadySkillMenu(x + 30 + w * s, y + 18, 98) = 0 then
       begin
+        Rrole_a[r].lMagic[S] := Rrole_a[r].lMagic[S] + 1 - Rrole[r].lMagic[S];
         Rrole[r].lMagic[s] := 1;
         // rrole[r].Attack := rrole[r].Attack - rrole[r].MagLevel[s];
       end;
@@ -6324,9 +6750,11 @@ begin
   end;
 end;
 
-procedure initialeventtime;
+procedure InitialAutoEvent;
 var
-  i, j: integer;
+  i, j,idx,grp,len,len0: integer;
+  offset:array of integer;
+  edata:array of smallint;
 begin
 
   for i := 0 to length(ddata) - 1 do
@@ -6335,6 +6763,27 @@ begin
       begin
         ddata[i, j, 11] := 1 + random(ddata[i, j, 13]);
       end;
+  idx := FileOpen('resource\kdef.idx', fmopenread);
+  grp := FileOpen('resource\kdef.grp', fmopenread);
+  len:=fileseek(idx,0,2) div 4;
+  setlength(offset,len + 1);
+  offset[0]:=0;
+  fileseek(idx,0,0);
+  FileRead(idx, offset[1], len * 4);
+  len0:=fileseek(grp,0,2);
+  fileseek(grp,0,0);
+  setlength(edata,len0 div 2);
+  FileRead(grp, edata[0],offset[len]);
+  fileclose(idx);
+  fileclose(grp);
+  for i:= 0 to len - 1 do //最后一个OFFSET表示数据结尾，不能当做事件使用
+  begin
+    if edata[offset[i] div 2] = 130 then
+    begin
+      autosetrenwu(edata[offset[i] div 2 + 1],edata[offset[i] div 2 + 2],edata[offset[i] div 2 + 3],edata[offset[i] div 2 + 4],edata[offset[i] div 2 + 5],edata[offset[i] div 2 + 6],edata[offset[i] div 2 + 7],edata[offset[i] div 2 + 8]);
+    end;
+  end;
+
 end;
 
 procedure initialrandom;
@@ -6457,8 +6906,6 @@ begin
   FileClose(grp);
 
 end;
-
-
 
 
 end.

@@ -16,7 +16,9 @@ uses
   SDL_Gfx,
   kys_type,
   kys_battle,
-  kys_main;
+  kys_main,
+  gl,
+  glext;
 
 
 //事件判断
@@ -83,6 +85,21 @@ function TalktoWidestring(num: integer; fgrp, fidx: string): WideString;
 
 //讀取戰場語錄
 procedure initialBTalk;
+
+//保存当前屏幕
+
+procedure Savescreen(num:integer); overload;
+procedure Savescreen(num,x,y,w,h:integer;Scr:PSDL_Surface); overload;
+//重画一个屏幕
+procedure Reshowscreen(num:integer); overload;
+procedure Reshowscreen(num,x,y,w,h:integer); overload;
+//模擬單挑
+function AIVS(rnum1,rnum2:smallint):boolean;
+
+//作弊的後果
+procedure dealcheat;
+
+procedure CheckLoadCheat;
 
 implementation
 
@@ -174,9 +191,12 @@ end;
 //事件是否可以触发
 
 function IsEventActive(snum, eventnum: integer): boolean;
+var
+  t:integer;
 begin
   Result := False;
-  if (DData[snum, eventnum, 11] >= 0) and (TimeToNum >= DData[snum, eventnum, 11]) and
+  t:=TimeToNum;
+  if (DData[snum, eventnum, 11] >= 0) and (t >= DData[snum, eventnum, 11]) and
     (DData[snum, eventnum, 12] >= 0) and (DData[snum, eventnum, 15] = 0) then
   begin
     if (DData[snum, eventnum, 12] = 0) and (DData[snum, eventnum, 13] = 0) then
@@ -185,11 +205,11 @@ begin
     begin
       if DData[snum, eventnum, 13] > 0 then
       begin
-        if ((TimeToNum - DData[snum, eventnum, 11]) mod DData[snum, eventnum, 13]) <= DData[snum, eventnum, 12] then
+        if ((t - DData[snum, eventnum, 11]) mod DData[snum, eventnum, 13]) < DData[snum, eventnum, 12] then
           Result := True;
       end
       else
-      if (TimeToNum - DData[snum, eventnum, 11]) < DData[snum, eventnum, 12] then Result := True;
+      if (t - DData[snum, eventnum, 11]) < DData[snum, eventnum, 12] then Result := True;
     end;
 
   end;
@@ -364,9 +384,29 @@ begin
     for j := 0 to 399 do
     begin
       if (DData[i, j, 11] >= 0) and (DData[i, j, 14] > 0) and (DData[i, j, 15] = 0) then
+      begin
         if (DData[i, j, 16] > 0) and (DData[i, j, 17] >= 0) then
           if (t - DData[i, j, 14] = DData[i, j, 16]) then
             CallEvent(DData[i, j, 17]);
+      end;
+      if (DData[i, j, 0] > 9) and (DData[i, j, 11] >= 0) and (t >= DData[i, j, 11]) and
+        (DData[i, j, 12] > 0) and (DData[i, j, 15] = 0) then
+      begin
+        if DData[i, j, 13] > 0 then
+        begin
+          if ((t - DData[i, j, 11]) mod DData[i, j, 13]) = DData[i, j, 12] then
+          begin
+            Rrole[DData[i, j, 0] div 10].MRevent := -1;
+          end;
+        end
+        else if (t - DData[i, j, 11]) = DData[i, j, 12] then
+        begin
+          Rrole[DData[i, j, 0] div 10].MRevent := -1;
+        end;
+      end;
+
+      end;
+
     end;
   len := length(songli);
   if len > 0 then
@@ -425,24 +465,15 @@ begin
       end;
     end;
   end;
-  for i := RccRole.Count - 1 downto 0 do
+  for i := TimeTrigger.Count - 1 downto 0 do
   begin
-    if RccRole.adds[i].Dtime <= t then
+    if (TimeTrigger.adds[i].types = 0) and (TimeTrigger.adds[i].stime + TimeTrigger.adds[i].Dtime <= t) then
     begin
-      instruct_3([RccRole.adds[i].snum, RccRole.adds[i].DNum, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-      Ddata[RccRole.adds[i].snum,RccRole.adds[i].DNum,1]:=-1;
-      Rrole[RccRole.adds[i].rnum].lsweizhi := -1;
-      Rrole[RccRole.adds[i].rnum].lsnweizhi := -1;
-      Rrole[RccRole.adds[i].rnum].lsfangxiang := 0;
-      for j := i to RccRole.Count - 2 do
-      begin
-        RccRole.adds[j].Rnum := RccRole.adds[j + 1].Rnum;
-        RccRole.adds[j].snum := RccRole.adds[j + 1].snum;
-        RccRole.adds[j].Dnum := RccRole.adds[j + 1].Dnum;
-        RccRole.adds[j].Dtime := RccRole.adds[j + 1].Dtime;
-      end;
-      setlength(RccRole.adds, RccRole.Count - 1);
-      Dec(RccRole.Count);
+      deltimetrigger(i);
+    end
+    else if (TimeTrigger.adds[i].types = 1) and ((TimeTrigger.adds[i].endtime = 0) or (t < TimeTrigger.adds[i].endtime)) and (t = TimeTrigger.adds[i].stime) then
+    begin
+      callevent(TimeTrigger.adds[i].event);
     end;
   end;
 end;
@@ -514,7 +545,7 @@ end;
 procedure MyDiziLevelUp;
 var
   i, j, j1, j2, k, k1, k2, n, mpnum, tm, ltmp, Aptitude, miji, tneigong, zhiwujc6, zhiwujc7,
-  zhiwujc9, mnum, nolw, lwstatus, nnum, lwnum, p, mexp: integer;
+  zhiwujc9, mnum, nolw, lwstatus, nnum, lwnum, p, mexp,tmp0: integer;
   tmp, lv: array[0..29] of integer;
   str: WideString;
   key: boolean;
@@ -523,10 +554,6 @@ begin
   mpnum := Rrole[0].menpai;
   for i := 0 to length(Rrole) - 1 do
   begin
-    if Rrole[i].dtime <=0 then
-    begin
-      continue;
-    end;
     if Rrole[i].menpai = mpnum then
     begin
       if Rmenpai[mpnum].zhiwu[9] >= 0 then
@@ -540,16 +567,21 @@ begin
       else zhiwujc6 := 0;
       if (Rrole[i].nweizhi >= 0) and (Rrole[i].nweizhi <= 4) then
       begin
+        tmp0:=Rrole[i].exp;
         Inc(Rrole[i].exp, round((Rrole[i].level * 2 + 20) * (100 + random(100)) * (100 + zhiwujc6) / 25000));
         Rrole[i].Exp := min(Rrole[i].Exp, 35000);
+        Rrole_a[i].exp := Rrole_a[i].exp + Rrole[i].exp - tmp0;
+        tmp0 := Rrole[i].ExpForBook;
         Inc(Rrole[i].ExpForBook, round((Rrole[i].level * 2 + 20) * (100 + random(100)) *
           (100 + zhiwujc6) * 4 / 125000));
         Rrole[i].ExpForBook := min(Rrole[i].ExpForBook, 30000);
+        Rrole_a[i].ExpForBook:= Rrole_a[i].ExpForBook + Rrole[i].ExpForBook -tmp0;
         while (Rrole[i].Level < MAX_LEVEL) and (uint16(Rrole[i].Exp) >= uint16(LevelUplist[Rrole[i].Level - 1])) do
         begin
+          Rrole_a[i].Exp := Rrole_a[i].Exp - LevelUplist[Rrole[i].Level - 1];
           Rrole[i].Exp := Rrole[i].Exp - LevelUplist[Rrole[i].Level - 1];
           Rrole[i].Level := Rrole[i].Level + 1;
-          LevelUp2(i);
+          LevelUp(i,2);
         end;
         CheckBook;
         n := 0;
@@ -569,11 +601,13 @@ begin
           tm := random(n);
           ltmp := Rrole[i].maglevel[tmp[tm]];
           mexp := round((Rrole[i].level div 3 + 10) * (100 + random(100)) * (100 + zhiwujc6) / 30000);
+
+          tmp0 := Rrole[i].maglevel[tmp[tm]];
           Inc(Rrole[i].maglevel[tmp[tm]], mexp);
           mnum := Rrole[i].lmagic[tmp[tm]];
           if Rrole[i].maglevel[tmp[tm]] > 999 then
             Rrole[i].maglevel[tmp[tm]] := 999;
-
+          Rrole_a[i].maglevel[tmp[tm]] := Rrole_a[i].maglevel[tmp[tm]] + Rrole[i].maglevel[tmp[tm]] - tmp0;
           if ((Rrole[i].maglevel[tmp[tm]] div 100) > (ltmp div 100)) then
           begin
             EatOneItem(i, Rmagic[mnum].miji, False);
@@ -613,6 +647,7 @@ begin
               if random(5000) < Aptitude then
               begin
                 lwnum := random(nnum);
+                tmp0 := Rrole[i].MagLevel[tmp[tm]];
                 Rrole[i].MagLevel[tmp[tm]] := Rrole[i].MagLevel[tmp[tm]] + 100;
                 if Rrole[i].MagLevel[tmp[tm]] < 1000 then
                 begin
@@ -620,6 +655,7 @@ begin
                 end;
                 if Rrole[i].maglevel[tmp[tm]] > 999 then
                   Rrole[i].maglevel[tmp[tm]] := 999;
+                Rrole_a[i].MagLevel[tmp[tm]] := Rrole_a[i].MagLevel[tmp[tm]] + Rrole[i].MagLevel[tmp[tm]] - tmp0;
                 p := 0;
                 for j2 := 0 to nolw do
                   if (lwstatus and (1 shl j2)) = 0 then
@@ -629,8 +665,9 @@ begin
                       break;
                   end;
                 EatOneItem(i, Rmagic[mnum].miji, False);
+                tmp0 := Rrole[i].lzhaoshi[tmp[tm]];
                 Rrole[i].lzhaoshi[tmp[tm]] := Rrole[i].lzhaoshi[tmp[tm]] or (1 shl j2);
-
+                Rrole_a[i].lzhaoshi[tmp[tm]] := Rrole_a[i].lzhaoshi[tmp[tm]] + Rrole[i].lzhaoshi[tmp[tm]] - tmp0;
                 str := GBKtoUnicode(@Rrole[i].Name);
                 str := str + '領悟';
                 str := str + GBKtoUnicode(@Rzhaoshi[Rmagic[mnum].zhaoshi[j2]].Name);
@@ -660,12 +697,14 @@ begin
         begin
 
           tm := random(n);
+          tmp0:=Rrole[i].maglevel[tmp[tm]];
           ltmp := Rrole[i].maglevel[tmp[tm]];
           Inc(Rrole[i].maglevel[tmp[tm]], round((Rrole[0].level * 3 + 30 - ltmp div 10) * (100 + random(100)) *
             (100 + zhiwujc6) / 25000));
 
           if Rrole[i].maglevel[tmp[tm]] > 999 then
             Rrole[i].maglevel[tmp[tm]] := 999;
+          Rrole_a[i].maglevel[tmp[tm]]:=Rrole_a[i].maglevel[tmp[tm]]+Rrole[i].maglevel[tmp[tm]]-tmp0;
           if ((Rrole[i].maglevel[tmp[tm]] div 100) > (ltmp div 100)) then
           begin
             EatOneItem(i, Rmagic[Rrole[i].lmagic[tmp[tm]]].miji, False);
@@ -680,9 +719,10 @@ begin
         begin
           if (random(200) >= Rrole[i].msq) and (Rrole[i].lmagic[0] < 1) then
           begin
+            tmp0 := Rrole[i].exp;
             Inc(Rrole[i].exp, round((Rrole[i].level * 4 + 40) * (100 + random(100)) * (100 + zhiwujc6) / 25000));
             Rrole[i].Exp := min(Rrole[i].Exp, 35000);
-
+            Rrole_a[i].exp := Rrole_a[i].exp + Rrole[i].exp -tmp0;
           end
           else
           begin
@@ -696,6 +736,7 @@ begin
                 if Rrole[i].lmagic[k1] = Rmpmagic[mpnum][k] then break;
                 if Rrole[i].lmagic[k1] <= 0 then
                 begin
+                  Rrole_a[i].lmagic[k1] := Rrole_a[i].lmagic[k1] + Rmpmagic[mpnum][k] - Rrole[i].lmagic[k1];
                   Rrole[i].lmagic[k1] := Rmpmagic[mpnum][k];
                   EatOneItem(i, Rmagic[Rrole[i].lmagic[k1]].miji, False);
                   str := '【門派公告】' + gbktounicode(@Rrole[i].Name) + '學會' +
@@ -770,11 +811,13 @@ begin
         if n > 0 then
         begin
           tm := random(n);
+          tmp0:=Rrole[i].maglevel[tmp[tm]];
           ltmp := Rrole[i].maglevel[tmp[tm]];
           Inc(Rrole[i].maglevel[tmp[tm]], round((Rrole[i].level div 3 + 10) * (100 + random(100)) *
             (100 + zhiwujc9) / 50000));
           if Rrole[i].maglevel[tmp[tm]] div 100 > Rmagic[Rrole[i].lmagic[tm]].MaxLevel then
             Rrole[i].maglevel[tmp[tm]] := Rmagic[Rrole[i].lmagic[tm]].MaxLevel * 100;
+          Rrole_a[i].maglevel[tmp[tm]]:=Rrole_a[i].maglevel[tmp[tm]]+Rrole[i].maglevel[tmp[tm]]-tmp0;
           if ((Rrole[i].maglevel[tmp[tm]] div 100) > (ltmp div 100)) then
           begin
             EatOneItem(i, Rmagic[Rrole[i].lmagic[tmp[tm]]].miji, False);
@@ -946,6 +989,7 @@ procedure EnemyDiziLevelUp;
 var
   i, j, j1, j2, k, k1, mp0, n, n1, n2, tm, tm1, tm2, mpnum, tneigong, Aptitude, mnum, nolw,
   lwstatus, nnum, lwnum, p, ltmp: integer;
+  tmp0:integer;
   tmp, tmp1, tmp2, lv: array[0..29] of integer;
   str: WideString;
   db1, db2, db3, db4: double;
@@ -962,16 +1006,16 @@ begin
       db2 := Rrole[i].lwq * (Rmenpai[mpnum].czsd);
       db3 := mpzyjc(mpnum) * 30 * 8 / Rmenpai[mpnum].dizi;
       db4 := db1 * db2 * db3 / 250000000;
+      tmp0:= Rrole[i].exp;
       Inc(Rrole[i].exp, round(db4));
       Rrole[i].Exp := min(Rrole[i].Exp, 35000);
-
       while (Rrole[i].Level < MAX_LEVEL) and (uint16(Rrole[i].Exp) >= uint16(LevelUplist[Rrole[i].Level - 1])) do
       begin
         Rrole[i].Exp := Rrole[i].Exp - LevelUplist[Rrole[i].Level - 1];
         Rrole[i].Level := Rrole[i].Level + 1;
-        LevelUp2(i);
+        LevelUp(i,2);
       end;
-
+      Rrole_a[i].exp := Rrole_a[i].exp + Rrole[i].exp - tmp0;
       n := 0;
       n1 := 0;
       n2 := 0;
@@ -1009,12 +1053,13 @@ begin
           db1 := (Rrole[i].level div 3 + 10) * (100 + random(100));
           db2 := (Rmenpai[mpnum].czsd) * mpzyjc(mpnum);
           db3 := db1 * db2 / 3000000;
+          tmp0:=Rrole[i].maglevel[tmp[tm]];
           Inc(Rrole[i].maglevel[tmp[tm]], round(db3));
           mnum := Rrole[i].lmagic[tmp[tm]];
 
           if Rrole[i].maglevel[tmp[tm]] > 999 then
             Rrole[i].maglevel[tmp[tm]] := 999;
-
+          Rrole_a[i].maglevel[tmp[tm]]:=Rrole_a[i].maglevel[tmp[tm]]+Rrole[i].maglevel[tmp[tm]]-tmp0;
           if (Rrole[i].maglevel[tmp[tm]] div 100) > ltmp then
           begin
             EatOneItem(i, Rmagic[mnum].miji, False);
@@ -1049,6 +1094,7 @@ begin
               if random(5000) < Aptitude then
               begin
                 lwnum := random(nnum);
+                tmp0:=Rrole[i].MagLevel[tmp[tm]] ;
                 Rrole[i].MagLevel[tmp[tm]] := Rrole[i].MagLevel[tmp[tm]] + 100;
                 if Rrole[i].MagLevel[tmp[tm]] < 1000 then
                 begin
@@ -1056,6 +1102,7 @@ begin
                 end;
                 if Rrole[i].maglevel[tmp[tm]] > 999 then
                   Rrole[i].maglevel[tmp[tm]] := 999;
+                Rrole_a[i].MagLevel[tmp[tm]] :=Rrole_a[i].MagLevel[tmp[tm]] +Rrole[i].MagLevel[tmp[tm]] -tmp0;
                 p := 0;
                 for j2 := 0 to 4 do
                   if (lwstatus and (1 shl j2)) = 0 then
@@ -1064,7 +1111,9 @@ begin
                     if p > lwnum then
                       break;
                   end;
+                tmp0:=Rrole[i].lzhaoshi[tmp[tm]];
                 Rrole[i].lzhaoshi[tmp[tm]] := Rrole[i].lzhaoshi[tmp[tm]] or (1 shl j2);
+                Rrole_a[i].lzhaoshi[tmp[tm]]:=Rrole_a[i].lzhaoshi[tmp[tm]]+Rrole[i].lzhaoshi[tmp[tm]]-tmp0;
                 EatOneItem(i, Rmagic[mnum].miji, False);
                 break;
               end;
@@ -1079,6 +1128,7 @@ begin
           if (random(100) > Rrole[i].msq) and (random(Rmenpai[mpnum].dizi) > 7) then
             continue;
           tm1 := random(n1);
+          tmp0:=Rrole[i].maglevel[tmp1[tm1]];
           ltmp := Rrole[i].maglevel[tmp1[tm1]] div 100;
           db1 := (Rrole[i].level * 3 + 30 - ltmp * 11) * (100 + random(100));
           db2 := (Rmenpai[Rrole[i].menpai].czsd) * mpzyjc(Rrole[i].menpai);
@@ -1086,6 +1136,7 @@ begin
           Inc(Rrole[i].maglevel[tmp1[tm1]], round(db3));
           if Rrole[i].maglevel[tmp1[tm1]] > 999 then
             Rrole[i].maglevel[tmp1[tm1]] := 999;
+          Rrole_a[i].maglevel[tmp1[tm1]]:=Rrole_a[i].maglevel[tmp1[tm1]]+Rrole[i].maglevel[tmp1[tm1]]-tmp0;
           if (Rrole[i].maglevel[tmp1[tm1]] div 100) > ltmp then
           begin
             EatOneItem(i, Rmagic[Rrole[i].lmagic[tmp1[tm1]]].miji, False);
@@ -1098,7 +1149,9 @@ begin
         begin
           if (random(100) > Rrole[i].msq) and (random(Rmenpai[mpnum].dizi) > 1) then
             continue;
+
           tm2 := random(n2);
+          tmp0:=Rrole[i].maglevel[tmp2[tm2]];
           ltmp := Rrole[i].maglevel[tmp2[tm2]] div 100;
           db1 := (Rrole[i].level div 3 + 10) * (100 + random(100));
           db2 := (Rmenpai[Rrole[i].menpai].czsd) * mpzyjc(Rrole[i].menpai);
@@ -1106,6 +1159,8 @@ begin
           Inc(Rrole[i].maglevel[tmp2[tm2]], round(db3));
           if Rrole[i].maglevel[tmp2[tm2]] > (Rmagic[Rrole[i].lmagic[tmp2[tm2]]].maxlevel * 100) then
             Rrole[i].maglevel[tmp2[tm2]] := Rmagic[Rrole[i].lmagic[tmp2[tm2]]].maxlevel * 100;
+          Rrole_a[i].maglevel[tmp2[tm2]]:=Rrole_a[i].maglevel[tmp2[tm2]]+Rrole[i].maglevel[tmp2[tm2]]-tmp0;
+
           if ((Rrole[i].maglevel[tmp2[tm2]] div 100) > ltmp) then
           begin
             EatOneItem(i, Rmagic[Rrole[i].lmagic[tmp2[tm2]]].miji, False);
@@ -1177,6 +1232,7 @@ begin
             if Rrole[i].lmagic[k1] = Rmpmagic[mpnum][k] then break;
             if Rrole[i].lmagic[k1] <= 0 then
             begin
+              Rrole_a[i].lmagic[k1] := Rrole_a[i].lmagic[k1] + Rmpmagic[mpnum][k] - Rrole[i].lmagic[k1];
               Rrole[i].lmagic[k1] := Rmpmagic[mpnum][k];
               break;
             end;
@@ -1233,7 +1289,10 @@ begin
       flag := False;
   end;
   if flag then
+  begin
+    Rrole_a[num].lmagic[k] := Rrole_a[num].lmagic[k] + j - Rrole[num].lmagic[k];
     Rrole[num].lmagic[k] := j;
+  end;
 end;
 //拼音輸入法
 
@@ -2334,7 +2393,9 @@ begin
       if (Rrole[0].MenPai > 0) then
       begin
         if (i = Rrole[0].menpai) and (Rmenpai[Rrole[0].MenPai].zmr = 0) then
+        begin
           continue;
+        end;
       end;
       setlength(mpdiaodu, n + 1);
       mpdiaodu[n].mpnum := i;
@@ -2821,10 +2882,36 @@ begin
   end;
 
 end;
-
+function AIVS(rnum1,rnum2:smallint):boolean;
+var
+  mag1,mag2: integer;
+  str: WideString;
+begin
+  mag1:=GetGeliveAblemag(rnum1);
+  mag2:=GetGeliveAblemag(rnum2);
+  result:=false;
+  while (true)do
+  begin
+    if mag1 >= 0 then
+    begin
+      HurtValueAI(rnum1, rnum2,Rrole[rnum1].lmagic[mag1],Rrole[rnum1].maglevel[mag1] div 100);
+      if Rrole[rnum2].CurrentHP <= 0 then
+      begin
+        result:=true;
+        exit;
+      end;
+      HurtValueAI(rnum2, rnum1,Rrole[rnum2].lmagic[mag2],Rrole[rnum2].maglevel[mag2] div 100);
+      if Rrole[rnum1].CurrentHP <= 0 then
+      begin
+        result:=false;
+        exit;
+      end;
+    end;
+  end;
+end;
 procedure HurtValueAI(Rnum1, Rnum2, mnum, level: integer);
 var
-  i, l1, c, mhurt, p, def, mp1, mp2, addatt, att, spd2, wpn2, spd1, wpn1, k1, k2, knowledge, dis, res: integer;
+  i, l1, c, mhurt, p, def, mp1, mp2, addatt, att, spd2, wpn2, spd1, wpn1, k1, k2, knowledge, dis, res,tmp: integer;
   a1, s1, m1, w1: double;
 begin
 
@@ -2900,9 +2987,12 @@ begin
     res := random(10) + 1;
   if (res > 9999) then
     res := 9999;
-
+  tmp:= Rrole[rnum1].CurrentMP;
   Rrole[rnum1].CurrentMP := max(0, Rrole[rnum1].CurrentMP - level * Rmagic[mnum].NeedMP);
+  Rrole_a[rnum1].CurrentMP:=Rrole_a[rnum1].CurrentMP + Rrole[rnum1].CurrentMP - tmp;
+  tmp:=Rrole[rnum2].CurrentHP;
   Rrole[rnum2].CurrentHP := max(0, Rrole[rnum2].CurrentHP - res);
+  Rrole_a[rnum2].CurrentHP:=Rrole_a[rnum2].CurrentHP + Rrole[rnum2].CurrentHP - tmp;
 end;
 
 procedure newdizijoin;
@@ -2937,7 +3027,7 @@ end;
 
 procedure dalyrestore;
 var
-  i, hx: integer;
+  i, hx,tmp: integer;
 begin
 
   for i := 0 to length(Rrole) - 1 do
@@ -2947,25 +3037,34 @@ begin
       continue;
     end;
     hx := Rrole[i].rehurt;
+    tmp:=Rrole[i].CurrentHP;
     Rrole[i].CurrentHP := max(1, min(Rrole[i].CurrentHP + Rrole[i].MaxHP div 20 +
       (Rrole[i].MaxHP - Rrole[i].CurrentHP) div 20 - (Rrole[i].Hurt + Rrole[i].Poision) *
       Rrole[i].CurrentHP div 200, Rrole[i].MaxHP));
+    Rrole_a[i].CurrentHP:=Rrole_a[i].CurrentHP + Rrole[i].CurrentHP - tmp;
+    tmp:=Rrole[i].CurrentMP;
     Rrole[i].CurrentMP := max(1, min(Rrole[i].CurrentMP + Rrole[i].MaxMP div 20 +
       (Rrole[i].MaxMP - Rrole[i].CurrentMP) div 20 - (Rrole[i].Hurt + Rrole[i].Poision) *
       Rrole[i].CurrentMP div 200, Rrole[i].MaxMP));
+    Rrole_a[i].CurrentMP:=Rrole_a[i].CurrentMP + Rrole[i].CurrentMP -tmp;
+
+    tmp:=Rrole[i].PhyPower;
     Rrole[i].PhyPower := max(1, min(100, Rrole[i].PhyPower + 3 - (Rrole[i].Hurt + Rrole[i].Poision) div 50));
+    Rrole_a[i].PhyPower:=Rrole_a[i].PhyPower + Rrole[i].PhyPower - tmp;
     if Rrole[i].Hurt <= 33 then
       hx := hx + 2
     else if (Rrole[i].Hurt > 33) and (Rrole[i].Hurt <= 66) then
       hx := hx + 1
     else if (Rrole[i].Hurt > 66) then
       hx := hx + random(2) - 1;
+    tmp:=Rrole[i].Hurt;
     Rrole[i].Hurt := min(100, Rrole[i].Hurt - hx);
     if Rrole[i].Hurt <= 0 then
     begin
       Rrole[i].Hurt := 0;
       Rrole[i].rehurt := 0;
     end;
+    Rrole_a[i].Hurt:=Rrole_a[i].Hurt + Rrole[i].Hurt -tmp;
   end;
 end;
 //讀取戰場語錄
@@ -3029,4 +3128,423 @@ begin
 
 end;
 
+//保存當前屏幕
+procedure savescreen(num,x, y, w, h:integer;Scr:PSDL_SurFace); overload;
+var
+  dest: TSDL_Rect;
+begin
+  dest.x := x;
+  dest.y := y;
+  dest.w := min(w,Scr.w - dest.x);
+  dest.h := min(h,Scr.h - dest.y);
+  if (Scr.w = screens[num].w) and (Scr.h = screens[num].h) then
+  begin
+
+    SDL_BlitSurface(Scr, @dest, Screens[num], @dest);
+
+  end;
+end;
+procedure savescreen(num:integer); overload;
+begin
+  savescreen(num, 0, 0, screens[num].w, screens[num].h,preScreen);
+end;
+//重现一个屏幕
+procedure reshowscreen(num:integer); overload;
+begin
+  reshowscreen(num, 0, 0, screens[num].w, screens[num].h);
+end;
+procedure reshowscreen(num,x,y,w,h:integer); overload;
+var
+  dest: TSDL_Rect;
+begin
+  dest.x := x;
+  dest.y := y;
+  dest.w := min(w,Screen.w - dest.x);
+  dest.h := min(h,Screen.h - dest.y);
+  if (Screen.w = screens[num].w) and (Screen.h = screens[num].h) then
+  begin
+
+    SDL_BlitSurface(Screens[num], @dest, Screen, @dest);
+
+  end;
+end;
+procedure dealcheat;
+begin
+  MessageBox(0, '修改游戏会降低游戏乐趣，请不要修改！', '防修改', MB_OK);
+end;
+procedure CheckLoadCheat;
+var
+  Ritemlist_s :array of Titemlist;
+  Rrole_s :array of Trole;
+  filename, filename1: string;
+  idx, grp, i1,i2, len, len1, wei,count: integer;
+  RoleOffset: integer;
+  tmp:uint16;
+  savedata:Tsave;
+  ischeat:boolean;
+  note:array of string;
+  f:TextFile;
+begin
+  count:=0;
+  filename := 'R' + IntToStr(savenum);
+  filename1 := 'save\' + 'R' + IntToStr(savenum) + '.grp';
+
+  if savenum = 0 then
+    filename := 'ranger';
+  idx := FileOpen('save\ranger.idx', fmopenread);
+  grp := FileOpen('save\' + filename + '.grp', fmopenread);
+  FileRead(idx, RoleOffset, 4);
+  FileRead(idx, len, 4);
+  wei := 32;
+  FileSeek(grp, 32, 0);
+  setlength(savedata.a,len);
+  savedata.len:=len;
+  FileRead(grp, savedata.a[0], savedata.len);
+  fileclose(idx);
+  fileclose(grp);
+  jiemi(@savedata.a[0], savedata.len,wei);
+
+  wei:=42;
+  len1:=sizeof(Titemlist) * MAX_ITEM_AMOUNT;
+  setlength(Ritemlist_s,MAX_ITEM_AMOUNT);
+  CopyMemory(@Ritemlist_s[0],@savedata.a[wei],len1);
+  wei:=wei + len1;
+  len1:=len - RoleOffset;
+  setlength(Rrole_s, len1 div sizeof(Trole));
+  CopyMemory(@Rrole_s[0],@savedata.a[wei],len1);
+  ischeat:=false;
+  for i1 :=0 to length(Ritemlist_s) - 1 do
+  begin
+    if ((Ritemlist[i1].Number - Ritemlist_s[i1].Number) <> Ritemlist_a[i1].Number)then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='物品编号：' + inttostr(i1);
+      ischeat:=true;
+    end;
+    if((Ritemlist[i1].Amount - Ritemlist_s[i1].Amount) <> Ritemlist_a[i1].Amount) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='物品数量：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+  end;
+  for i1:=0 to length(Rrole) - 1 do
+  begin
+    if ((Rrole[i1].PracticeBook - Rrole_s[i1].PracticeBook) <> Rrole_a[i1].PracticeBook) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='PracticeBook：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].menpai - Rrole_s[i1].menpai) <> Rrole_a[i1].menpai) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='menpai：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].Defence - Rrole_s[i1].Defence) <> Rrole_a[i1].Defence) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='Defence：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].Speed - Rrole_s[i1].Speed) <> Rrole_a[i1].Speed) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='Speed：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].Attack - Rrole_s[i1].Attack) <> Rrole_a[i1].Attack) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='Attack：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].IncLife - Rrole_s[i1].IncLife) <> Rrole_a[i1].IncLife) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='IncLife：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].MPType - Rrole_s[i1].MPType) <> Rrole_a[i1].MPType) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='MPType：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].CurrentMP - Rrole_s[i1].CurrentMP) <> Rrole_a[i1].CurrentMP) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='CurrentMP：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].MaxMP - Rrole_s[i1].MaxMP) <> Rrole_a[i1].MaxMP) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='MaxMP：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].CurrentHP - Rrole_s[i1].CurrentHP) <> Rrole_a[i1].CurrentHP) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='CurrentHP：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].MaxHP - Rrole_s[i1].MaxHP) <> Rrole_a[i1].MaxHP) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='MaxHP：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].Unusual - Rrole_s[i1].Unusual) <> Rrole_a[i1].Unusual) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='Unusual：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].Knife - Rrole_s[i1].Knife) <> Rrole_a[i1].Knife) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='Knife：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].Sword - Rrole_s[i1].Sword) <> Rrole_a[i1].Sword) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='Sword：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].Fist - Rrole_s[i1].Fist) <> Rrole_a[i1].Fist) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='Fist：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].UsePoi - Rrole_s[i1].UsePoi) <> Rrole_a[i1].UsePoi) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='UsePoi：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].Medcine - Rrole_s[i1].Medcine) <> Rrole_a[i1].Medcine) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='Medcine：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    for i2:=0 to 29 do
+    begin
+      if ((Rrole[i1].LMagic[i2] - Rrole_s[i1].LMagic[i2]) <> Rrole_a[i1].LMagic[i2]) then
+      begin
+        inc(count);
+        setlength(note,count);
+        note[count - 1]:='LMagic：'+ inttostr(i1) + ' ' + inttostr(i2);
+        ischeat:=true;
+      end;
+    end;
+    for i2:=0 to 29 do
+    begin
+      if ((Rrole[i1].MagLevel[i2] - Rrole_s[i1].MagLevel[i2]) <> Rrole_a[i1].MagLevel[i2]) then
+      begin
+        inc(count);
+        setlength(note,count);
+        note[count - 1]:='MagLevel：'+ inttostr(i1) + ' '+inttostr(i2);
+        ischeat:=true;
+      end;
+    end;
+    for i2:=0 to 29 do
+    begin
+      if ((Rrole[i1].LZhaoshi[i2] - Rrole_s[i1].LZhaoshi[i2]) <> Rrole_a[i1].LZhaoshi[i2]) then
+      begin
+        inc(count);
+        setlength(note,count);
+        note[count - 1]:='LZhaoshi：'+ inttostr(i1) + ' ' + inttostr(i2);
+        ischeat:=true;
+      end;
+    end;
+
+    if ((Rrole[i1].fuyuan - Rrole_s[i1].fuyuan) <> Rrole_a[i1].fuyuan) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='fuyuan：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].Aptitude - Rrole_s[i1].Aptitude) <> Rrole_a[i1].Aptitude) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='Aptitude：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].xiangxing - Rrole_s[i1].xiangxing) <> Rrole_a[i1].xiangxing) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='xiangxing：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].HidWeapon - Rrole_s[i1].HidWeapon) <> Rrole_a[i1].HidWeapon) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='HidWeapon：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    tmp:=Rrole[i1].Exp - Rrole_s[i1].Exp;
+    if (tmp <> Rrole_a[i1].Exp) then
+    begin
+      inc(count);
+      setlength(note,count);
+      writeln(inttostr(tmp));
+      note[count - 1]:='Exp：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    tmp:=Rrole[i1].ExpForBook - Rrole_s[i1].ExpForBook;
+    if (tmp<> Rrole_a[i1].ExpForBook) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='ExpForBook：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].Hurt - Rrole_s[i1].Hurt) <> Rrole_a[i1].Hurt) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='Hurt：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].Poision - Rrole_s[i1].Poision) <> Rrole_a[i1].Poision) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='Poision：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].PhyPower - Rrole_s[i1].PhyPower) <> Rrole_a[i1].PhyPower) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='PhyPower：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    for i2:=0 to 4 do
+    begin
+      if ((Rrole[i1].Equip[i2] - Rrole_s[i1].Equip[i2]) <> Rrole_a[i1].Equip[i2]) then
+      begin
+        inc(count);
+        setlength(note,count);
+        note[count - 1]:='Equip：'+ inttostr(i1) + ' ' + inttostr(i2);
+        ischeat:=true;
+      end;
+    end;
+    if ((Rrole[i1].Angry - Rrole_s[i1].Angry) <> Rrole_a[i1].Angry) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='Angry：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].rehurt - Rrole_s[i1].rehurt) <> Rrole_a[i1].rehurt) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='rehurt：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].MedPoi - Rrole_s[i1].MedPoi) <> Rrole_a[i1].MedPoi) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='MedPoi：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].DefPoi - Rrole_s[i1].DefPoi) <> Rrole_a[i1].DefPoi) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='DefPoi：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].Knowledge - Rrole_s[i1].Knowledge) <> Rrole_a[i1].Knowledge) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='Knowledge：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].Ethics - Rrole_s[i1].Ethics) <> Rrole_a[i1].Ethics) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='Ethics：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].AttPoi - Rrole_s[i1].AttPoi) <> Rrole_a[i1].AttPoi) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='AttPoi：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].AttTwice - Rrole_s[i1].AttTwice) <> Rrole_a[i1].AttTwice) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='AttTwice：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].Repute - Rrole_s[i1].Repute) <> Rrole_a[i1].Repute) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='Repute：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+    if ((Rrole[i1].jiaoqing - Rrole_s[i1].jiaoqing) <> Rrole_a[i1].jiaoqing) then
+    begin
+      inc(count);
+      setlength(note,count);
+      note[count - 1]:='jiaoqing：'+ inttostr(i1);
+      ischeat:=true;
+    end;
+  end;
+  if ischeat then
+  begin
+    filename:='cheating.txt';
+    grp:=filecreate(filename);
+    fileclose(grp);
+    AssignFile(f, filename);
+    Append(f);
+    for i1 :=0 to count - 1 do
+    begin
+      writeln(f,note[i1]);
+
+    end;
+    Flush(f);
+    closefile(f);
+
+    dealcheat;
+  end;
+end;
 end.

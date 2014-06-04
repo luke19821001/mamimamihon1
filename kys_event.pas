@@ -279,15 +279,26 @@ begin
   begin
     if (RItemList[i].Number = inum) then
     begin
+      RItemList_a[i].Amount :=RItemList_a[i].Amount + amount;
       RItemList[i].Amount := RItemList[i].Amount + amount;
-      if (RItemList[i].Amount < 0) and (amount >= 0) then RItemList[i].Amount := 32767;
-      if (RItemList[i].Amount < 0) and (amount < 0) then RItemList[i].Amount := 0;
+      if (RItemList[i].Amount < 0) and (amount >= 0) then
+      begin
+        RItemList_a[i].Amount :=RItemList_a[i].Amount + 32767 - RItemList[i].Amount;
+        RItemList[i].Amount := 32767;
+      end;
+      if (RItemList[i].Amount < 0) and (amount < 0) then
+      begin
+        RItemList_a[i].Amount := RItemList_a[i].Amount - RItemList[i].Amount;
+        RItemList[i].Amount := 0;
+      end;
       break;
     end;
     i := i + 1;
   end;
   if RItemList[i].number < 0 then
   begin
+    RItemList_a[i].Number :=RItemList_a[i].Number + inum - RItemList[i].Number;
+    RItemList_a[i].Amount :=RItemList_a[i].Amount + amount - RItemList[i].Amount;
     RItemList[i].Number := inum;
     RItemList[i].Amount := amount;
   end;
@@ -337,11 +348,15 @@ begin
   begin
     if i < p then
     begin
+      RItemList_a[i].Number :=RItemList_a[i].Number + item[i] - RItemList[i].Number;
+      RItemList_a[i].Amount :=RItemList_a[i].Amount + amount[i] - RItemList[i].Amount;
       RItemList[i].Number := item[i];
       RItemList[i].Amount := amount[i];
     end
     else
     begin
+      RItemList_a[i].Number :=RItemList_a[i].Number -1 - RItemList[i].Number;
+      RItemList_a[i].Amount :=RItemList_a[i].Amount - RItemList[i].Amount;
       RItemList[i].Number := -1;
       RItemList[i].Amount := 0;
     end;
@@ -464,7 +479,10 @@ var
   i, i1: integer;
   word: WideString;
 begin
-  if teamcount >= 25 then exit;
+  if (teamcount >= 25) or (Rrole[rnum].TeamState in [1, 2]) then
+  begin
+    exit;
+  end;
   Rrole[rnum].TeamState := 2;
   Rrole[rnum].nweizhi := 13;
   Rrole[rnum].dtime := 1000;
@@ -524,7 +542,7 @@ end;
 
 procedure instruct_12;
 var
-  i, rnum: integer;
+  i, rnum,tmp: integer;
 begin
   dayto(1, 0);
   for i := 0 to 5 do
@@ -534,37 +552,73 @@ begin
     begin
       if not ((Rrole[rnum].Hurt > 33) or (Rrole[rnum].Poision > 33)) then
       begin
-        Dec(Rrole[rnum].Hurt, 5);
-        Rrole[rnum].Hurt := max(Rrole[rnum].Hurt, 0);
-        Dec(Rrole[rnum].Poision, 5);
-        Rrole[rnum].Poision := max(0, Rrole[rnum].Poision);
+        tmp:= Rrole[rnum].Hurt - 5;
+        tmp := max(tmp, 0);
+        Rrole_a[rnum].Hurt:= Rrole_a[rnum].Hurt + tmp - Rrole[rnum].Hurt;
+        Rrole[rnum].Hurt:= tmp;
+
+        tmp:= Rrole[rnum].Poision - 5;
+        tmp := max(tmp, 0);
+        Rrole_a[rnum].Poision:= Rrole_a[rnum].Poision + tmp - Rrole[rnum].Poision;
+        Rrole[rnum].Poision:= tmp;
+
+        Rrole_a[rnum].CurrentHP :=Rrole_a[rnum].CurrentHP + Rrole[rnum].MaxHP - Rrole[rnum].CurrentHP;
         Rrole[rnum].CurrentHP := Rrole[rnum].MaxHP;
+        Rrole_a[rnum].CurrentMP :=Rrole_a[rnum].CurrentMP + Rrole[rnum].MaxMP - Rrole[rnum].CurrentMP;
         Rrole[rnum].CurrentMP := Rrole[rnum].MaxMP;
+        Rrole_a[rnum].PhyPower :=Rrole_a[rnum].PhyPower + MAX_PHYSICAL_POWER - Rrole[rnum].PhyPower;
         Rrole[rnum].PhyPower := MAX_PHYSICAL_POWER;
       end
       else if not ((Rrole[rnum].Hurt > 60) or (Rrole[rnum].Poision > 60)) then
       begin
-        Dec(Rrole[rnum].Hurt, 2);
-        Rrole[rnum].Hurt := max(Rrole[rnum].Hurt, 0);
-        Dec(Rrole[rnum].Poision, 2);
-        Rrole[rnum].Poision := max(0, Rrole[rnum].Poision);
-        Rrole[rnum].CurrentHP := (Rrole[rnum].MaxHP - Rrole[rnum].CurrentHP) div 10 + Rrole[rnum].MaxHP div 10;
-        Rrole[rnum].CurrentHP := min(Rrole[rnum].CurrentHP, Rrole[rnum].MaxHP);
-        Rrole[rnum].CurrentMP := (Rrole[rnum].MaxMP - Rrole[rnum].CurrentMP) div 10 + Rrole[rnum].MaxMP div 10;
-        Rrole[rnum].CurrentMP := min(Rrole[rnum].CurrentMP, Rrole[rnum].MaxMP);
+        tmp:= Rrole[rnum].Hurt - 2;
+        tmp := max(tmp, 0);
+        Rrole_a[rnum].Hurt:= Rrole_a[rnum].Hurt + tmp - Rrole[rnum].Hurt;
+        Rrole[rnum].Hurt:= tmp;
+
+        tmp:= Rrole[rnum].Poision - 2;
+        tmp := max(tmp, 0);
+        Rrole_a[rnum].Poision:= Rrole_a[rnum].Poision + tmp - Rrole[rnum].Poision;
+        Rrole[rnum].Poision:= tmp;
+
+        tmp:= (Rrole[rnum].MaxHP - Rrole[rnum].CurrentHP) div 10 + Rrole[rnum].MaxHP div 10;
+        tmp := min(tmp, Rrole[rnum].MaxHP);
+        Rrole_a[rnum].CurrentHP:= Rrole_a[rnum].CurrentHP + tmp - Rrole[rnum].CurrentHP;
+        Rrole[rnum].CurrentHP:= tmp;
+        tmp:= (Rrole[rnum].MaxMP - Rrole[rnum].CurrentMP) div 10 + Rrole[rnum].MaxMP div 10;
+        tmp := min(tmp, Rrole[rnum].MaxMP);
+        Rrole_a[rnum].CurrentMP:= Rrole_a[rnum].CurrentMP + tmp - Rrole[rnum].CurrentMP;
+        Rrole[rnum].CurrentMP:= tmp;
+
+        Rrole_a[rnum].PhyPower :=Rrole_a[rnum].PhyPower + MAX_PHYSICAL_POWER - Rrole[rnum].PhyPower;
         Rrole[rnum].PhyPower := MAX_PHYSICAL_POWER;
+
       end
       else if not ((Rrole[rnum].Hurt > 80) or (Rrole[rnum].Poision > 80)) then
       begin
-        Dec(Rrole[rnum].Hurt, 1);
-        Rrole[rnum].Hurt := max(Rrole[rnum].Hurt, 0);
-        Dec(Rrole[rnum].Poision, 1);
-        Rrole[rnum].Poision := max(0, Rrole[rnum].Poision);
-        Rrole[rnum].CurrentHP := (Rrole[rnum].MaxHP - Rrole[rnum].CurrentHP) div 20 + Rrole[rnum].MaxHP div 20;
-        Rrole[rnum].CurrentHP := min(Rrole[rnum].CurrentHP, Rrole[rnum].MaxHP);
-        Rrole[rnum].CurrentMP := (Rrole[rnum].MaxMP - Rrole[rnum].CurrentMP) div 20 + Rrole[rnum].MaxMP div 20;
-        Rrole[rnum].CurrentMP := min(Rrole[rnum].CurrentMP, Rrole[rnum].MaxMP);
-        Rrole[rnum].PhyPower := min(MAX_PHYSICAL_POWER, Rrole[rnum].PhyPower + 5);
+        tmp:= Rrole[rnum].Hurt - 1;
+        tmp := max(tmp, 0);
+        Rrole_a[rnum].Hurt:= Rrole_a[rnum].Hurt + tmp - Rrole[rnum].Hurt;
+        Rrole[rnum].Hurt:= tmp;
+
+        tmp:= Rrole[rnum].Poision - 1;
+        tmp := max(tmp, 0);
+        Rrole_a[rnum].Poision:= Rrole_a[rnum].Poision + tmp - Rrole[rnum].Poision;
+        Rrole[rnum].Poision:= tmp;
+
+        tmp:= (Rrole[rnum].MaxHP - Rrole[rnum].CurrentHP) div 20 + Rrole[rnum].MaxHP div 20;
+        tmp := min(tmp, Rrole[rnum].MaxHP);
+        Rrole_a[rnum].CurrentHP:= Rrole_a[rnum].CurrentHP + tmp - Rrole[rnum].CurrentHP;
+        Rrole[rnum].CurrentHP:= tmp;
+        tmp:= (Rrole[rnum].MaxMP - Rrole[rnum].CurrentMP) div 20 + Rrole[rnum].MaxMP div 20;
+        tmp := min(tmp, Rrole[rnum].MaxMP);
+        Rrole_a[rnum].CurrentMP:= Rrole_a[rnum].CurrentMP + tmp - Rrole[rnum].CurrentMP;
+        Rrole[rnum].CurrentMP:= tmp;
+
+        tmp:=min(MAX_PHYSICAL_POWER, Rrole[rnum].PhyPower + 5);
+        Rrole_a[rnum].PhyPower :=Rrole_a[rnum].PhyPower + tmp - Rrole[rnum].PhyPower;
+        Rrole[rnum].PhyPower := tmp;
+
       end;
     end;
   end;
@@ -572,13 +626,79 @@ begin
   begin
     if (Rrole[i].TeamState = 2) then
     begin
-      if not ((Rrole[i].Hurt > 33) or (Rrole[i].Poision > 33)) then
+      rnum:=i;
+      if (rnum >= 0) then
       begin
-        Rrole[i].Hurt := 0;
-        Rrole[i].Poision := 0;
-        Rrole[i].CurrentHP := Rrole[i].MaxHP;
-        Rrole[i].CurrentMP := Rrole[i].MaxMP;
-        Rrole[i].PhyPower := MAX_PHYSICAL_POWER;
+        if not ((Rrole[rnum].Hurt > 33) or (Rrole[rnum].Poision > 33)) then
+        begin
+          tmp:= Rrole[rnum].Hurt - 5;
+          tmp := max(tmp, 0);
+          Rrole_a[rnum].Hurt:= Rrole_a[rnum].Hurt + tmp - Rrole[rnum].Hurt;
+          Rrole[rnum].Hurt:= tmp;
+
+          tmp:= Rrole[rnum].Poision - 5;
+          tmp := max(tmp, 0);
+          Rrole_a[rnum].Poision:= Rrole_a[rnum].Poision + tmp - Rrole[rnum].Poision;
+          Rrole[rnum].Poision:= tmp;
+
+          Rrole_a[rnum].CurrentHP :=Rrole_a[rnum].CurrentHP + Rrole[rnum].MaxHP - Rrole[rnum].CurrentHP;
+          Rrole[rnum].CurrentHP := Rrole[rnum].MaxHP;
+          Rrole_a[rnum].CurrentMP :=Rrole_a[rnum].CurrentMP + Rrole[rnum].MaxMP - Rrole[rnum].CurrentMP;
+          Rrole[rnum].CurrentMP := Rrole[rnum].MaxMP;
+          Rrole_a[rnum].PhyPower :=Rrole_a[rnum].PhyPower + MAX_PHYSICAL_POWER - Rrole[rnum].PhyPower;
+          Rrole[rnum].PhyPower := MAX_PHYSICAL_POWER;
+        end
+        else if not ((Rrole[rnum].Hurt > 60) or (Rrole[rnum].Poision > 60)) then
+        begin
+          tmp:= Rrole[rnum].Hurt - 2;
+          tmp := max(tmp, 0);
+          Rrole_a[rnum].Hurt:= Rrole_a[rnum].Hurt + tmp - Rrole[rnum].Hurt;
+          Rrole[rnum].Hurt:= tmp;
+
+          tmp:= Rrole[rnum].Poision - 2;
+          tmp := max(tmp, 0);
+          Rrole_a[rnum].Poision:= Rrole_a[rnum].Poision + tmp - Rrole[rnum].Poision;
+          Rrole[rnum].Poision:= tmp;
+
+          tmp:= (Rrole[rnum].MaxHP - Rrole[rnum].CurrentHP) div 10 + Rrole[rnum].MaxHP div 10;
+          tmp := min(tmp, Rrole[rnum].MaxHP);
+          Rrole_a[rnum].CurrentHP:= Rrole_a[rnum].CurrentHP + tmp - Rrole[rnum].CurrentHP;
+          Rrole[rnum].CurrentHP:= tmp;
+          tmp:= (Rrole[rnum].MaxMP - Rrole[rnum].CurrentMP) div 10 + Rrole[rnum].MaxMP div 10;
+          tmp := min(tmp, Rrole[rnum].MaxMP);
+          Rrole_a[rnum].CurrentMP:= Rrole_a[rnum].CurrentMP + tmp - Rrole[rnum].CurrentMP;
+          Rrole[rnum].CurrentMP:= tmp;
+
+          Rrole_a[rnum].PhyPower :=Rrole_a[rnum].PhyPower + MAX_PHYSICAL_POWER - Rrole[rnum].PhyPower;
+          Rrole[rnum].PhyPower := MAX_PHYSICAL_POWER;
+
+        end
+        else if not ((Rrole[rnum].Hurt > 80) or (Rrole[rnum].Poision > 80)) then
+        begin
+          tmp:= Rrole[rnum].Hurt - 1;
+          tmp := max(tmp, 0);
+          Rrole_a[rnum].Hurt:= Rrole_a[rnum].Hurt + tmp - Rrole[rnum].Hurt;
+          Rrole[rnum].Hurt:= tmp;
+
+          tmp:= Rrole[rnum].Poision - 1;
+          tmp := max(tmp, 0);
+          Rrole_a[rnum].Poision:= Rrole_a[rnum].Poision + tmp - Rrole[rnum].Poision;
+          Rrole[rnum].Poision:= tmp;
+
+          tmp:= (Rrole[rnum].MaxHP - Rrole[rnum].CurrentHP) div 20 + Rrole[rnum].MaxHP div 20;
+          tmp := min(tmp, Rrole[rnum].MaxHP);
+          Rrole_a[rnum].CurrentHP:= Rrole_a[rnum].CurrentHP + tmp - Rrole[rnum].CurrentHP;
+          Rrole[rnum].CurrentHP:= tmp;
+          tmp:= (Rrole[rnum].MaxMP - Rrole[rnum].CurrentMP) div 20 + Rrole[rnum].MaxMP div 20;
+          tmp := min(tmp, Rrole[rnum].MaxMP);
+          Rrole_a[rnum].CurrentMP:= Rrole_a[rnum].CurrentMP + tmp - Rrole[rnum].CurrentMP;
+          Rrole[rnum].CurrentMP:= tmp;
+
+          tmp:=min(MAX_PHYSICAL_POWER, Rrole[rnum].PhyPower + 5);
+          Rrole_a[rnum].PhyPower :=Rrole_a[rnum].PhyPower + tmp - Rrole[rnum].PhyPower;
+          Rrole[rnum].PhyPower := tmp;
+
+        end;
       end;
     end;
   end;
@@ -774,20 +894,23 @@ begin
 
   end;
 
-  if Rrole[rnum].PracticeBook >= 0 then
-  begin
-    instruct_32(Rrole[rnum].PracticeBook, 1);
-    Rrole[rnum].PracticeBook := -1;
-    //Rrole[rnum].ExpForBook := 0;
-  end;
 
   if w then
   begin
+    if Rrole[rnum].PracticeBook >= 0then
+    begin
+      instruct_32(Rrole[rnum].PracticeBook, 1);
+      Rrole_a[rnum].PracticeBook :=Rrole_a[rnum].PracticeBook -1 - Rrole[rnum].PracticeBook;
+      Rrole[rnum].PracticeBook := -1;
+      //Rrole[rnum].ExpForBook := 0;
+    end;
     Dec(teamcount);
     Rrole[rnum].nweizhi := 14;
     Rrole[rnum].dtime := random(5);
     word := gbktounicode(@Rrole[rnum].Name) + '離開隊伍！';
     DrawShadowText(@word[1], CENTER_X - 80, CENTER_Y - 150, ColColor($5), ColColor($7));
+    SDL_UpdateRect2(screen, 0, 0, screen.w, screen.h);
+    SDL_Delay(50 * (10 + GameSpeed));
   end;
   if Rrole[rnum].leaveevent > 0 then
     CallEvent(Rrole[rnum].leaveevent);
@@ -798,11 +921,15 @@ var
   i: integer;
 begin
   for i := 0 to 5 do
+  begin
+    Rrole_a[Teamlist[i]].CurrentMP := Rrole_a[Teamlist[i]].CurrentMP - Rrole[Teamlist[i]].CurrentMP;
     Rrole[Teamlist[i]].CurrentMP := 0;
+  end;
 end;
 
 procedure instruct_23(rnum, Poision: integer);
 begin
+  Rrole_a[rnum].UsePoi := Rrole_a[rnum].UsePoi + Poision -Rrole[rnum].UsePoi;
   Rrole[rnum].UsePoi := Poision;
 end;
 
@@ -984,15 +1111,26 @@ begin
   begin
     if (RItemList[i].Number = inum) then
     begin
+      RItemList_a[i].Amount :=RItemList_a[i].Amount + amount;
       RItemList[i].Amount := RItemList[i].Amount + amount;
-      if (RItemList[i].Amount < 0) and (amount >= 0) then RItemList[i].Amount := 32767;
-      if (RItemList[i].Amount < 0) and (amount < 0) then RItemList[i].Amount := 0;
+      if (RItemList[i].Amount < 0) and (amount >= 0) then
+      begin
+        RItemList_a[i].Amount :=RItemList_a[i].Amount + 32767 - RItemList[i].Amount;
+        RItemList[i].Amount := 32767;
+      end;
+      if (RItemList[i].Amount < 0) and (amount < 0) then
+      begin
+        RItemList_a[i].Amount := RItemList_a[i].Amount - RItemList[i].Amount;
+        RItemList[i].Amount := 0;
+      end;
       break;
     end;
     i := i + 1;
   end;
   if RItemList[i].Number < 0 then
   begin
+    RItemList_a[i].Number :=RItemList_a[i].Number + inum - RItemList[i].Number;
+    RItemList_a[i].Amount :=RItemList_a[i].Amount + amount - RItemList[i].Amount;
     RItemList[i].Number := inum;
     RItemList[i].Amount := amount;
   end;
@@ -1013,11 +1151,13 @@ var
 begin
   if Rrole[rnum].Aptitude + iq <= 100 then
   begin
+    Rrole_a[rnum].Aptitude := Rrole_a[rnum].Aptitude + iq;
     Rrole[rnum].Aptitude := Rrole[rnum].Aptitude + iq;
   end
   else
   begin
     iq := 100 - Rrole[rnum].Aptitude;
+    Rrole_a[rnum].Aptitude := Rrole_a[rnum].Aptitude + 100 - Rrole[rnum].Aptitude;
     Rrole[rnum].Aptitude := 100;
   end;
   if iq > 0 then
@@ -1044,25 +1184,32 @@ begin
     begin
       if Rrole[rnum].lMagic[i] = magicnum then
       begin
+        Rrole_a[rnum].MagLevel[i] := Rrole_a[rnum].MagLevel[i] + exp - Rrole[rnum].MagLevel[i];
         Rrole[rnum].MagLevel[i] := exp;
         break;
       end;
       if Rrole[rnum].lMagic[i] <= 0 then
       begin
+        Rrole_a[rnum].lMagic[i] := Rrole_a[rnum].lMagic[i] + magicnum -Rrole[rnum].lMagic[i];
         Rrole[rnum].lMagic[i] := magicnum;
+        Rrole_a[rnum].MagLevel[i]:=Rrole_a[rnum].MagLevel[i] + exp - Rrole[rnum].MagLevel[i];
         Rrole[rnum].MagLevel[i] := exp;
         break;
       end;
     end;
     if i = 30 then
     begin
+      Rrole_a[rnum].lMagic[0] := Rrole_a[rnum].lMagic[0] + magicnum -Rrole[rnum].lMagic[0];
       Rrole[rnum].lMagic[0] := magicnum;
+      Rrole_a[rnum].MagLevel[0] := Rrole_a[rnum].MagLevel[0] + exp - Rrole[rnum].MagLevel[0];
       Rrole[rnum].MagLevel[0] := exp;
     end;
   end
   else
   begin
+    Rrole_a[rnum].lMagic[magiclistnum]:= Rrole_a[rnum].lMagic[magiclistnum] + magicnum - Rrole[rnum].lMagic[magiclistnum];
     Rrole[rnum].lMagic[magiclistnum] := magicnum;
+    Rrole_a[rnum].MagLevel[magiclistnum]:=Rrole_a[rnum].MagLevel[magiclistnum] + exp - Rrole[rnum].MagLevel[magiclistnum];
     Rrole[rnum].MagLevel[magiclistnum] := exp;
   end;
 end;
@@ -1077,20 +1224,26 @@ end;
 
 procedure instruct_37(Ethics, rnum: integer);
 var
-  a, i: integer;
+  a, i,tmp: integer;
 begin
   if rnum >= 0 then
   begin
+    tmp := Rrole[rnum].Ethics;
     a := 0;
     if Rrole[rnum].MenPai >= 0 then
       if Rmenpai[Rrole[rnum].menpai].zhiwu[8] >= 0 then
         a := Rrole[Rmenpai[Rrole[rnum].menpai].zhiwu[8]].Repute *
           Rrole[Rmenpai[Rrole[rnum].menpai].zhiwu[8]].level div 300;
+
     Rrole[rnum].Ethics := Rrole[rnum].Ethics + ethics;
     if Random(100) <= a then
+    begin
+
       Rrole[rnum].Ethics := Rrole[rnum].Ethics + ethics;
+    end;
     if Rrole[rnum].Ethics > 100 then Rrole[rnum].Ethics := 100;
     if Rrole[rnum].Ethics < 0 then Rrole[rnum].Ethics := 0;
+    Rrole_a[rnum].Ethics:=Rrole_a[rnum].Ethics + Rrole[rnum].Ethics - tmp;
   end
   else
   begin
@@ -1098,6 +1251,7 @@ begin
     begin
       if Rrole[i].TeamState in [1, 2] then
       begin
+        tmp:=Rrole[i].Ethics;
         a := 0;
         if Rrole[i].MenPai > 0 then
           if Rmenpai[Rrole[i].menpai].zhiwu[8] >= 0 then
@@ -1106,6 +1260,7 @@ begin
         Rrole[i].Ethics := Rrole[i].Ethics + ethics * (100 + a) div 100;
         if Rrole[i].Ethics > 100 then Rrole[i].Ethics := 100;
         if Rrole[i].Ethics < 0 then Rrole[i].Ethics := 0;
+        Rrole_a[i].Ethics:= Rrole_a[i].Ethics + Rrole[i].Ethics - tmp;
       end;
     end;
   end;
@@ -1228,6 +1383,7 @@ procedure instruct_45(rnum, speed: integer);
 var
   word: WideString;
 begin
+  Rrole_A[rnum].Speed :=Rrole_A[rnum].Speed + speed;
   Rrole[rnum].Speed := Rrole[rnum].Speed + speed;
   if Rrole[rnum].TeamState in [1, 2] then
   begin
@@ -1250,7 +1406,9 @@ procedure instruct_46(rnum, mp: integer);
 var
   word: WideString;
 begin
+  Rrole_a[rnum].MaxMP := Rrole_a[rnum].MaxMP + mp;
   Rrole[rnum].MaxMP := Rrole[rnum].MaxMP + mp;
+  Rrole_a[rnum].CurrentMP :=Rrole_a[rnum].CurrentMP + Rrole[rnum].MaxMP - Rrole[rnum].CurrentMP;
   Rrole[rnum].CurrentMP := Rrole[rnum].MaxMP;
   if Rrole[rnum].TeamState in [1, 2] then
   begin
@@ -1273,6 +1431,7 @@ procedure instruct_47(rnum, Attack: integer);
 var
   word: WideString;
 begin
+  Rrole_A[rnum].Attack :=Rrole_A[rnum].Attack + Attack;
   Rrole[rnum].Attack := Rrole[rnum].Attack + Attack;
   if Rrole[rnum].TeamState in [1, 2] then
   begin
@@ -1295,7 +1454,10 @@ procedure instruct_48(rnum, hp: integer);
 var
   word: WideString;
 begin
+  Rrole_a[rnum].MaxHP:=Rrole_a[rnum].MaxHP + hp;
   Rrole[rnum].MaxHP := Rrole[rnum].MaxHP + hp;
+
+  Rrole_a[rnum].CurrentHP := Rrole_a[rnum].CurrentHP + Rrole[rnum].MaxHP - Rrole[rnum].CurrentHP;
   Rrole[rnum].CurrentHP := Rrole[rnum].MaxHP;
   if Rrole[rnum].TeamState in [1, 2] then
   begin
@@ -1318,9 +1480,13 @@ procedure AddDefense(rnum, def: integer);
 var
   word: WideString;
 begin
+  Rrole_a[rnum].Defence :=Rrole_a[rnum].Defence + def;
   Rrole[rnum].Defence := Rrole[rnum].Defence + def;
   if Rrole[rnum].Defence > MaxProList[45] then
+  begin
+    Rrole_a[rnum].Defence :=Rrole_a[rnum].Defence + MaxProList[45] - Rrole[rnum].Defence;
     Rrole[rnum].Defence := MaxProList[45];
+  end;
   if Rrole[rnum].TeamState in [1, 2] then
   begin
     DrawRectangle(CENTER_X - 75, 98, 145, 51, 0, ColColor(0, 255), 30);
@@ -1358,6 +1524,7 @@ end;
 
 procedure instruct_49(rnum, MPpro: integer);
 begin
+  Rrole_a[rnum].MPType :=Rrole_a[rnum].MPType + MPpro - Rrole[rnum].MPType;
   Rrole[rnum].MPType := MPpro;
 end;
 
@@ -1448,20 +1615,23 @@ end;
 
 procedure instruct_56(Repute, rnum: integer);
 var
-  zhiwujc, mpnum, i: integer;
+  zhiwujc, mpnum, i,tmp: integer;
 begin
   if rnum >= 0 then
   begin
+    tmp:=Rrole[rnum].Repute;
     mpnum := Rrole[rnum].MenPai;
     zhiwujc := 0;
     if mpnum >= 0 then
       if Rmenpai[mpnum].zhiwu[8] >= 0 then
         zhiwujc := Rrole[Rmenpai[mpnum].zhiwu[8]].Repute * Rrole[Rmenpai[mpnum].zhiwu[8]].level div 300;
+
     Rrole[rnum].Repute := Rrole[rnum].Repute + repute;
     if random(100) <= zhiwujc then
       Rrole[rnum].Repute := Rrole[rnum].Repute + abs(repute);
     Rrole[rnum].Repute := max(0, Rrole[rnum].Repute);
     Rrole[rnum].Repute := min(1000, Rrole[rnum].Repute);
+    Rrole_a[rnum].Repute:= Rrole_a[rnum].Repute + Rrole[rnum].Repute - tmp;
   end
   else if rnum = -1 then
   begin
@@ -1469,6 +1639,7 @@ begin
     begin
       if Rrole[i].TeamState in [1, 2] then
       begin
+        tmp:=Rrole[i].Repute;
         mpnum := Rrole[i].MenPai;
         zhiwujc := 0;
         if mpnum >= 0 then
@@ -1479,6 +1650,7 @@ begin
           Rrole[i].Repute := Rrole[i].Repute + abs(repute);
         Rrole[i].Repute := max(0, Rrole[i].Repute);
         Rrole[i].Repute := min(1000, Rrole[i].Repute);
+        Rrole_a[i].Repute:= Rrole_a[i].Repute + Rrole[i].Repute - tmp;
       end;
     end;
   end;
@@ -1552,6 +1724,7 @@ begin
       if Rrole[rnum].PracticeBook >= 0 then
       begin
         instruct_32(Rrole[rnum].PracticeBook, 1);
+        Rrole_a[rnum].PracticeBook :=Rrole_a[rnum].PracticeBook -1 - Rrole[rnum].PracticeBook;
         Rrole[rnum].PracticeBook := -1;
       end;
       Rrole[rnum].TeamState := 3;
@@ -1667,7 +1840,7 @@ end;
 
 function instruct_50e(code, e1, e2, e3, e4, e5, e6: integer): integer;
 var
-  i, t1, grp, idx, offset, len, i1, i2: integer;
+  i, t1, grp, idx, offset, len, i1, i2,tmp: integer;
   p, p1: pchar;
   //ps :pstring;
   str: string;
@@ -1809,7 +1982,11 @@ begin
       e4 := e_GetValue(1, e1, e4);
       e5 := e_GetValue(2, e1, e5);
       case e2 of
-        0: Rrole[e3].Data[e4 div 2] := e5;
+        0:
+        begin
+          Rrole_a[e3].Data[e4 div 2] :=Rrole_a[e3].Data[e4 div 2] + e5 - Rrole[e3].Data[e4 div 2];
+          Rrole[e3].Data[e4 div 2] := e5;
+        end;
         1: Ritem[e3].Data[e4 div 2] := e5;
         2: RScene[e3].Data[e4 div 2] := e5;
         3: Rmagic[e3].Data[e4 div 2] := e5;
@@ -1907,9 +2084,15 @@ begin
         $18FE2C:
         begin
           if e6 mod 4 <= 1 then
-            Ritemlist[e6 div 4].Number := e5
+          begin
+            Ritemlist_a[e6 div 4].Number :=Ritemlist_a[e6 div 4].Number + e5 - Ritemlist[e6 div 4].Number;
+            Ritemlist[e6 div 4].Number := e5;
+          end
           else
+          begin
+            Ritemlist_a[e6 div 4].Amount :=Ritemlist_a[e6 div 4].Amount + e5 - Ritemlist[e6 div 4].Amount;
             Ritemlist[e6 div 4].Amount := e5;
+          end;
         end;
         $051C83:
         begin
@@ -2346,7 +2529,9 @@ begin
           if Rrole[e3].lmagic[i] > 0 then
             if Rmagic[Rrole[e3].lmagic[i]].MagicType <> 5 then
             begin
+              Rrole_a[e3].lmagic[i]:= Rrole_a[e3].lmagic[i] - Rrole[e3].lmagic[i];
               Rrole[e3].lmagic[i] := 0;
+              Rrole_a[e3].MagLevel[i]:=Rrole_a[e3].MagLevel[i] - Rrole[e3].MagLevel[i];
               Rrole[e3].MagLevel[i] := 0;
             end;
         for i := 28 downto 0 do
@@ -2354,18 +2539,26 @@ begin
           begin
             for i1 := i to 8 do
             begin
+              Rrole_a[e3].lmagic[i1] :=Rrole_a[e3].lmagic[i1] + Rrole[e3].lmagic[i1 + 1] - Rrole[e3].lmagic[i1];
               Rrole[e3].lmagic[i1] := Rrole[e3].lmagic[i1 + 1];
+
+              Rrole_a[e3].MagLevel[i1] :=Rrole_a[e3].MagLevel[i1] + Rrole[e3].MagLevel[i1 + 1] - Rrole[e3].MagLevel[i1];
               Rrole[e3].MagLevel[i1] := Rrole[e3].MagLevel[i1 + 1];
             end;
           end;
+        Rrole_a[e3].lmagic[29] := Rrole_a[e3].lmagic[29] - Rrole[e3].lmagic[29];
         Rrole[e3].lmagic[29] := 0;
+
+        Rrole_a[e3].MagLevel[29] := Rrole_a[e3].MagLevel[29] - Rrole[e3].MagLevel[29];
         Rrole[e3].MagLevel[29] := 0;
       end
       else if e2 = -17 then //恢复武功
       begin
         for i := 0 to 29 do
         begin
+          Rrole_a[e3].lmagic[i] := Rrole_a[e3].lmagic[i] + magictemp[i] - Rrole[e3].lmagic[i];
           Rrole[e3].lmagic[i] := magictemp[i];
+          Rrole_a[e3].MagLevel[i]:= Rrole_a[e3].MagLevel[i] + magiclvtemp[i] - Rrole[e3].MagLevel[i];
           Rrole[e3].MagLevel[i] := magiclvtemp[i];
         end;
       end
@@ -2480,11 +2673,21 @@ begin
       else if e2 = -29 then //功体经验增加 luke改為修煉點數增加
       begin
         if e3 >= 0 then
-          Rrole[e3].ExpForBook := min(Rrole[e3].ExpForBook + e4, 50000)
+        begin
+          tmp := Rrole[e3].ExpForBook;
+          Rrole[e3].ExpForBook := min(Rrole[e3].ExpForBook + e4, 30000);
+          Rrole_a[e3].ExpForBook := Rrole_a[e3].ExpForBook + Rrole[e3].ExpForBook - tmp;
+        end
         else
           for i := 0 to length(Rrole) - 1 do
+          begin
             if Rrole[i].TeamState in [1, 2] then
-              Rrole[i].ExpForBook := min(Rrole[i].ExpForBook + e4, 50000);
+            begin
+              tmp:= Rrole[i].ExpForBook;
+              Rrole[i].ExpForBook := min(Rrole[i].ExpForBook + e4, 30000);
+              Rrole_a[i].ExpForBook:= Rrole_a[i].ExpForBook + Rrole[i].ExpForBook - tmp;
+            end;
+          end;
       end
       else if e2 = -30 then
       begin
@@ -2766,10 +2969,15 @@ end;
 
 procedure SetGongti(rnum, mnum: integer);
 var
-  l, oldkongti, i, j, n, k: integer;
+  l, oldkongti, i, j, n, k,tmp11,tmp12,tmp21,tmp22: integer;
   hp, mp: double;
 begin
   oldkongti := Rrole[rnum].Gongti;
+  tmp11:=Rrole[rnum].MaxHP;
+  tmp12:=Rrole[rnum].CurrentHP;
+  tmp21:=Rrole[rnum].MaxMP;
+  tmp22:=Rrole[rnum].CurrentMP;
+
   if Rrole[rnum].MaxHP <> 0 then
     hp := Rrole[rnum].CurrentHP / Rrole[rnum].MaxHP
   else
@@ -2802,8 +3010,8 @@ begin
     Inc(Rrole[rnum].MaxMP, Rmagic[Rrole[rnum].lmagic[Rrole[rnum].Gongti]].Addmp[l]);
   end;
 
-  Rrole[rnum].CurrentHP := max(trunc(Rrole[rnum].MaxHP * hp), 1);
-  Rrole[rnum].CurrentMP := max(trunc(Rrole[rnum].MaxMP * mp), 0);
+  Rrole[rnum].CurrentHP:=max(trunc(Rrole[rnum].MaxHP * hp), 1);;
+  Rrole[rnum].CurrentMP:=max(trunc(Rrole[rnum].MaxMP * mp), 0);
 
   for i := 0 to 9 do
   begin
@@ -2850,7 +3058,10 @@ begin
         end;
     end;
   end;
-
+  Rrole_a[rnum].MaxHP:=Rrole_a[rnum].MaxHP + Rrole[rnum].MaxHP - tmp11;
+  Rrole_a[rnum].CurrentHP:=Rrole_a[rnum].CurrentHP + Rrole[rnum].CurrentHP - tmp12;
+  Rrole_a[rnum].MaxMP:=Rrole_a[rnum].MaxMP + Rrole[rnum].MaxMP - tmp21;
+  Rrole_a[rnum].CurrentMP:=Rrole_a[rnum].CurrentMP + Rrole[rnum].CurrentMP - tmp22;
 end;
 
 function GetRoleAptitude(rnum,mods:integer):integer;
@@ -2920,7 +3131,7 @@ end;
 //重写的学会武功
 procedure StudyMagic(rnum, magicnum, newmagicnum, level, dismode: integer);
 var
-  i, n: integer;
+  i, n ,tmp: integer;
   word: WideString;
 label
   Next;
@@ -2933,10 +3144,14 @@ begin
       begin
         for n := i to 28 do
         begin
+          Rrole_a[rnum].lMagic[n] := Rrole_a[rnum].lMagic[n] + Rrole[rnum].lMagic[n + 1] - Rrole[rnum].lMagic[n];
           Rrole[rnum].lMagic[n] := Rrole[rnum].lMagic[n + 1];
+          Rrole_a[rnum].MagLevel[n] := Rrole_a[rnum].MagLevel[n] + Rrole[rnum].MagLevel[n + 1] - Rrole[rnum].MagLevel[n];
           Rrole[rnum].MagLevel[n] := Rrole[rnum].MagLevel[n + 1];
         end;
+        Rrole_a[rnum].lMagic[29] := Rrole_a[rnum].lMagic[29] - Rrole[rnum].lMagic[29];
         Rrole[rnum].lMagic[29] := 0;
+        Rrole_a[rnum].MagLevel[29] := Rrole_a[rnum].MagLevel[29] - Rrole[rnum].MagLevel[29];
         Rrole[rnum].MagLevel[29] := 0;
         break;
       end;
@@ -2950,7 +3165,9 @@ begin
       if Rrole[rnum].lMagic[i] = newmagicnum then //已经会的武功
       begin
         if level = -2 then level := 0;
+        tmp:=Rrole[rnum].MagLevel[i];
         Rrole[rnum].MagLevel[i] := min(Rrole[rnum].MagLevel[i] + level + 100, 999);
+        Rrole_a[rnum].MagLevel[i] := Rrole_a[rnum].MagLevel[i] + Rrole[rnum].MagLevel[i] - tmp;
         StudyMagic(rnum, magicnum, 0, 0, 1);
         n := 1; //若已将原有武功升级则不执行替换武功
         break;
@@ -2961,7 +3178,12 @@ begin
       begin
         if (Rrole[rnum].lMagic[i] = magicnum) or (Rrole[rnum].lMagic[i] < 0) then //老武功替换为新武功
         begin
-          if level <> -2 then Rrole[rnum].MagLevel[i] := level;
+          if level <> -2 then
+          begin
+            Rrole_a[rnum].MagLevel[i] := Rrole_a[rnum].MagLevel[i] + level - Rrole[rnum].MagLevel[i];
+            Rrole[rnum].MagLevel[i] := level;
+          end;
+          Rrole_a[rnum].lMagic[i] := Rrole_a[rnum].lMagic[i] + newmagicnum - Rrole[rnum].lMagic[i];
           Rrole[rnum].lMagic[i] := newmagicnum;
           break;
         end;
@@ -2970,9 +3192,12 @@ begin
     begin
       if (magicnum > 0) and (Rrole[rnum].lMagic[i] <= 0) then //学会武功并设置等级
       begin
+        Rrole_a[rnum].lMagic[i] := Rrole_a[rnum].lMagic[i] + magicnum - Rrole[rnum].lMagic[i];
         Rrole[rnum].lMagic[i] := magicnum;
         if level = -2 then level := 0;
+        tmp:=Rrole[rnum].MagLevel[i];
         Rrole[rnum].MagLevel[i] := min(Rrole[rnum].MagLevel[i] + level + 100, 999);
+        Rrole_a[rnum].MagLevel[i] := Rrole_a[rnum].MagLevel[i] + Rrole[rnum].MagLevel[i] - tmp;
         break;
       end;
     end;
@@ -3007,6 +3232,7 @@ begin
         if GetMagicLevel(rnum, Ritem[Rrole[rnum].PracticeBook].Magic) = -1 then
         begin
           instruct_32(Rrole[rnum].PracticeBook, 1);
+          Rrole_a[rnum].PracticeBook :=Rrole_a[rnum].PracticeBook -1 - Rrole[rnum].PracticeBook;
           Rrole[rnum].PracticeBook := -1;
           //Rrole[rnum].ExpForBook := 0;
         end;
@@ -5334,9 +5560,14 @@ end;}
 
 procedure GongtiLevelUp(rnum, mnum: integer);
 var
-  lv: integer;
+  lv,tmp11,tmp12,tmp21,tmp22: integer;
 begin
   if mnum <> Rrole[rnum].lmagic[Rrole[rnum].gongti] then exit;
+
+  tmp11:=Rrole[rnum].MaxHP;
+  tmp12:=Rrole[rnum].CurrentHP;
+  tmp21:=Rrole[rnum].MaxMP;
+  tmp22:=Rrole[rnum].CurrentMP;
 
   lv := getGongtilevel(rnum, Rrole[rnum].gongti);
   Dec(Rrole[rnum].CurrentHP, Rmagic[mnum].Addhp[lv]);
@@ -5350,6 +5581,11 @@ begin
 
   Rrole[rnum].CurrentHP := max(Rrole[rnum].CurrentHP, 0);
   Rrole[rnum].CurrentMP := max(Rrole[rnum].CurrentMP, 0);
+  Rrole_a[rnum].MaxHP:=Rrole_a[rnum].MaxHP + Rrole[rnum].MaxHP - tmp11;
+  Rrole_a[rnum].CurrentHP:=Rrole_a[rnum].CurrentHP + Rrole[rnum].CurrentHP - tmp12;
+  Rrole_a[rnum].MaxMP:=Rrole_a[rnum].MaxMP + Rrole[rnum].MaxMP - tmp21;
+  Rrole_a[rnum].CurrentMP:=Rrole_a[rnum].CurrentMP + Rrole[rnum].CurrentMP - tmp22;
+
 end;
 
 function CheckEquipSet(e0, e1, e2, e3: integer): integer;

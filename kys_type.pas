@@ -175,9 +175,7 @@ type
 
   TShop = record
     case TCallType of
-      Element: (shopItem: array[0..17] of Tshopitem;
-
-      );
+      Element: (shopItem: array[0..17] of Tshopitem;);
       Address: (Data: array[0..35] of Smallint);
   end;
 
@@ -265,12 +263,12 @@ type
 
 
 
-  TRccRoleArr = record
-    Rnum, snum, DNum, Dtime: smallint; //回收场景人物
+  TtimetriggerArr = record
+    renwunum,Rnum, snum, DNum, stime,Dtime,xhtime,xhrandom,endtime,types,event: smallint; //回收场景人物
   end;
-  TRccRole = record
+  Ttimetrigger = record
     Count: smallint;
-    adds: array of TRccRoleArr;
+    adds: array of TtimetriggerArr;
   end;
   TShowBWord = record
     sign: smallint; //0连击左右弱点攻击,1攻防招式,2破招,3完防,4愤怒,5战败,6队友战败
@@ -289,6 +287,10 @@ type
     etalk: array[0..2] of array[0..9] of WideString;
   end;
 
+  Tsave = record
+    len:integer;
+    a:array of system.byte;
+  end;
 
 var
   teststr: string;
@@ -365,6 +367,8 @@ var
   InShip, Useless1, Mx, My, Sx, Sy, MFace, ShipX, ShipY, ShipFace: Smallint;
   TeamList: array[0..5] of Smallint;
   RItemList: array of TItemList;
+  RItemList_a: array of TItemList;
+
   isbattle: boolean = False;
   MStep, Still: integer;
   //主地图坐标, 方向, 步数, 是否处于静止
@@ -373,9 +377,10 @@ var
   CurScene, CurItem, CurEvent, CurMagic, CurrentBattle, Where: integer;
   //当前场景, 事件(在场景中的事件号), 使用物品, 战斗
   //where: 0-主地图, 1-场景, 2-战场, 3-开头画面
-  SaveNum: integer;
+  SaveNum: smallint;
   //存档号, 未使用
   Rrole: array of TRole;
+  Rrole_a: array of TRole;
   Ritem: array of TItem;
   RScene: array of TScene;
   Rmagic: array of TMagic;
@@ -442,11 +447,14 @@ var
   battlepic,MATESIGN_PIC,SELECTEDMATE_PIC, ENEMYSIGN_PIC, SELECTEDENEMY_PIC,
   PROGRESS_PIC,NowPROGRESS_PIC, angryprogress_pic, angrycollect_pic, angryfull_pic: Tpic;
   ROLL_PIC,ROLLSTYLE_PIC,WORD_ZHUANGTAI_PIC,WORD_WUGONG_PIC,WORD_XITONG_PIC,WORD_WUPIN_PIC,WORD_SHUPU_PIC,WORD_DUIYOU_PIC: Tpic;
-  {STATE_PIC, BEGIN_PIC, MAGIC_PIC, SYSTEM_PIC, MAP_PIC, SKILL_PIC, DIZI_PIC, GONGJI_PIC,
-  JIANSHE_PIC, MPNEIGONG_PIC, MPZHUANGTAI_PIC, RENMING_PIC, SONGLI_PIC, YIDONG_PIC: Tpic;
-  MENUITEM_PIC, MENUESC_PIC, MenuescBack_PIC, battlepic, TEAMMATE_PIC: Tpic;
-  PROGRESS_PIC, MATESIGN_PIC, SELECTEDMATE_PIC, ENEMYSIGN_PIC, SELECTEDENEMY_PIC, DEATH_PIC: Tpic;
-  NowPROGRESS_PIC, angryprogress_pic, angrycollect_pic, angryfull_pic, Maker_Pic: Tpic;  }
+  WORD_XINGGE_PIC,WORD_XINGGEZY_PIC: Tpic;
+  WORD_XIANGXING_PIC:array[0..9] of Tpic;
+  WORD_YOUHAO_PIC: array[0..7] of Tpic;
+  WORD_AIHAO_PIC: array[0..8] of Tpic;
+  WORD_SYSTEM_PIC:array[0..4] of Tpic;
+  RENWU_PIC,WORD_RENWU_PIC:Tpic;
+
+  HUIKUANG3_PIC,HUANGKUANG3_PIC,BIAOTIKUANG3_PIC:Tpic;
 
   Head_Pic: array of Tpic;
   SkillPIC: array of Tpic;
@@ -461,12 +469,15 @@ var
 
 
   screen, RealScreen, prescreen: PSDL_Surface;
+  screens:array[0..2] of PSDL_Surface;
   //主画面, 实际画面, 预备画面
 
 
   event: TSDL_Event;
+  EventTag,Tryevent:boolean;
+  EventEndCount,TryEventTmpI:integer;
   //事件
-  Font, Font2, EngFont, EngFont2: PTTF_Font;
+  Font, Font18,Font16, EngFont, EngFont16: PTTF_Font;
   TextColor: TSDL_Color;
   Text: PSDL_Surface;
   //字体
@@ -568,7 +579,7 @@ var
   fuli: smallint = 0;
   //场景设施人员工作分配数组
   SceAnpai: array of array[0..12] of smallint;
-  RccRole: TRccRole;
+  Timetrigger: Ttimetrigger;
 
   //戰場語錄
   allbtalk: TallBTalk;

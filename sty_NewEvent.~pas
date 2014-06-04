@@ -24,7 +24,23 @@ type
       Element: (Item, Amount, own_num, Seclectamount, Price, index: Smallint);
       Address: (Data: array[0..5] of Smallint);
   end;
-
+type
+  Tfightblank = record
+    rounds,count:integer;
+    winner:array of smallint;
+    role:array of array[0..1] of smallint;
+  end;
+type
+  Tfightrnum = record
+    len,liver,nowrounds:integer;
+    rnum,victory,order,rnumorder:array of smallint;
+    blank:array of Tfightblank;
+  end;
+type
+  Tnowfight = record
+    ready:integer;
+    fightrnum,offset:array[0..1] of smallint;
+  end;
 //ly
 //是否掌门
 function IsZhangmen(rnum, snum, jump1, jump2: integer): integer;
@@ -172,9 +188,20 @@ function RoleEvent(key, key2, rnum, snum, x, y, face, Ytime, enum1, enum2, enum3
 //任務提示記錄
 function talktostr(talknum: integer): WideString;
 procedure talktotips(talknum: integer);
-procedure addrenwu(key, num, talknum, status, day: smallint);
+procedure addrenwutishi(key, num, talknum, status, day: smallint);
 //下场战斗新增人员
 procedure AddEnemyNextFight(key,rnum,team:integer);
+function pushstack(key,data:integer):boolean;
+procedure popstack(key,resX:integer);
+procedure fightmatch(key,mods,resAX,view:integer);
+procedure showfightmatch1(rnums1:Tfightrnum;fight:Tnowfight;count,mods:integer);
+
+//新增任務标记
+procedure autosetrenwu(key, Renwunum,stime, xhtime, xhrandom,endtime,event, endcount: smallint);
+function updatatimetrigger(renwunum,Rnum,snum,DNum,Dtime,stime,xhtime,xhrandom,endtime,types,event:integer):integer;
+procedure deltimetrigger(num:integer);
+procedure tryrenwu(key,Renwunum, stime, xhtime, xhrandom,endtime,event,endcount: smallint);
+procedure CHANGErenwu(key,Renwunum, stime, xhtime, xhrandom,endtime,event,endcount: smallint);
 implementation
 
 uses
@@ -358,15 +385,14 @@ begin
                   begin
                     if menuyn = 0 then
                     begin
+                      Rrole_a[tudi].ExpForBook:=Rrole_a[tudi].ExpForBook - NeedExp div 2;
+                      Rrole_a[shifu].ExpForBook:=Rrole_a[shifu].ExpForBook - NeedExp div 2;
                       Dec(Rrole[tudi].ExpForBook, NeedExp div 2);
                       Dec(Rrole[shifu].ExpForBook, NeedExp div 2);
                       instruct_33(tudi, sfmag[menu], 1);
 
                       //取消，改為吃書
-                        {Rrole[tudi].Fist := min(Rrole[tudi].Fist + Rmagic[Rrole[shifu].lmagic[menu]].AddFist, 200);
-                        Rrole[tudi].Sword := min(Rrole[tudi].Sword + Rmagic[Rrole[shifu].lmagic[menu]].AddSword, 200);
-                        Rrole[tudi].Knife := min(Rrole[tudi].Knife + Rmagic[Rrole[shifu].lmagic[menu]].AddKnife, 200);
-                        Rrole[tudi].Unusual := min(Rrole[tudi].Unusual + Rmagic[Rrole[shifu].lmagic[menu]].AddUnusual, 200);}
+                        
                       EatOneItem(tudi, Rmagic[sfmag[menu]].miji, True);
                       yes := 1;
                       Redraw;
@@ -404,14 +430,13 @@ begin
                   begin
                     if menuyn = 0 then
                     begin
+                      Rrole_a[tudi].ExpForBook:=Rrole_a[tudi].ExpForBook - NeedExp div 2;
+                      Rrole_a[shifu].ExpForBook:=Rrole_a[shifu].ExpForBook - NeedExp div 2;
                       Dec(Rrole[tudi].ExpForBook, NeedExp div 2);
                       Dec(Rrole[shifu].ExpForBook, NeedExp div 2);
                       instruct_33(tudi, sfmag[menu], 1);
                       //取消，改為吃書
-                        {Rrole[tudi].Fist := min(Rrole[tudi].Fist + Rmagic[Rrole[shifu].lmagic[menu]].AddFist, 200);
-                        Rrole[tudi].Sword := min(Rrole[tudi].Sword + Rmagic[Rrole[shifu].lmagic[menu]].AddSword, 200);
-                        Rrole[tudi].Knife := min(Rrole[tudi].Knife + Rmagic[Rrole[shifu].lmagic[menu]].AddKnife, 200);
-                        Rrole[tudi].Unusual := min(Rrole[tudi].Unusual + Rmagic[Rrole[shifu].lmagic[menu]].AddUnusual, 200);}
+                      
                       EatOneItem(tudi, Rmagic[sfmag[menu]].miji, True);
                       yes := 1;
                       Redraw;
@@ -538,15 +563,14 @@ begin
                   begin
                     if menuyn = 0 then
                     begin
+                      Rrole_a[tudi].ExpForBook:=Rrole_a[tudi].ExpForBook - NeedExp div 2;
+                      Rrole_a[shifu].ExpForBook:=Rrole_a[shifu].ExpForBook - NeedExp div 2;
                       Dec(Rrole[tudi].ExpForBook, NeedExp div 2);
                       Dec(Rrole[shifu].ExpForBook, NeedExp div 2);
                       instruct_33(tudi, sfmag[menu], 1);
 
                       //取消，改為吃書
-                        {Rrole[tudi].Fist := min(Rrole[tudi].Fist + Rmagic[Rrole[shifu].lmagic[menu]].AddFist, 200);
-                        Rrole[tudi].Sword := min(Rrole[tudi].Sword + Rmagic[Rrole[shifu].lmagic[menu]].AddSword, 200);
-                        Rrole[tudi].Knife := min(Rrole[tudi].Knife + Rmagic[Rrole[shifu].lmagic[menu]].AddKnife, 200);
-                        Rrole[tudi].Unusual := min(Rrole[tudi].Unusual + Rmagic[Rrole[shifu].lmagic[menu]].AddUnusual, 200);}
+                        
                       EatOneItem(tudi, Rmagic[sfmag[menu]].miji, True);
                       yes := 1;
                       Redraw;
@@ -584,14 +608,13 @@ begin
                   begin
                     if menuyn = 0 then
                     begin
+                      Rrole_a[tudi].ExpForBook:=Rrole_a[tudi].ExpForBook - NeedExp div 2;
+                      Rrole_a[shifu].ExpForBook:=Rrole_a[shifu].ExpForBook - NeedExp div 2;
                       Dec(Rrole[tudi].ExpForBook, NeedExp div 2);
                       Dec(Rrole[shifu].ExpForBook, NeedExp div 2);
                       instruct_33(tudi, sfmag[menu], 1);
                       //取消，改為吃書
-                        {Rrole[tudi].Fist := min(Rrole[tudi].Fist + Rmagic[Rrole[shifu].lmagic[menu]].AddFist, 200);
-                        Rrole[tudi].Sword := min(Rrole[tudi].Sword + Rmagic[Rrole[shifu].lmagic[menu]].AddSword, 200);
-                        Rrole[tudi].Knife := min(Rrole[tudi].Knife + Rmagic[Rrole[shifu].lmagic[menu]].AddKnife, 200);
-                        Rrole[tudi].Unusual := min(Rrole[tudi].Unusual + Rmagic[Rrole[shifu].lmagic[menu]].AddUnusual, 200);}
+                        
                       EatOneItem(tudi, Rmagic[sfmag[menu]].miji, True);
                       yes := 1;
                       Redraw;
@@ -1079,6 +1102,7 @@ begin
     Inc(Rmenpai[Rrole[rnum].MenPai].aziyuan[3]);
     Rmenpai[mpnum].dizi := Rmenpai[mpnum].dizi + 1;
     Dec(Rmenpai[mpnum].aziyuan[3]);
+    Rrole_a[rnum].menpai :=Rrole_a[rnum].menpai + mpnum - Rrole[rnum].menpai;
     Rrole[rnum].menpai := mpnum;
   end;
   Rmenpai[mpnum].zmr := rnum;
@@ -1953,6 +1977,8 @@ begin
     end;
   Rmenpai[Rrole[rnum].MenPai].dizi := Rmenpai[Rrole[rnum].MenPai].dizi - 1;
   Inc(Rmenpai[Rrole[rnum].MenPai].aziyuan[3]);
+  Rrole_a[rnum].MenPai :=Rrole_a[rnum].MenPai + ( -1 - Rrole[rnum].MenPai);
+
   Rrole[rnum].MenPai := -1;
   Rrole[rnum].weizhi := -1;
   Rrole[rnum].nweizhi := -1;
@@ -1960,7 +1986,10 @@ begin
   Rrole[rnum].bssx := -1;
   Rrole[rnum].scsx := -1;
   Rrole[rnum].dtime := 0;
-  if (rnum >= 300) and (rnum < 600) then Rrole[rnum].HeadNum := -1;
+  if (rnum >= 300) and (rnum < 600) then
+  begin
+    Rrole[rnum].HeadNum := -1;
+  end;
   if (Rrole[0].menpai > 0) and (Rrole[rnum].MenPai = Rrole[0].menpai) then
   begin
     addtips(strs);
@@ -5235,6 +5264,7 @@ begin
               if selectGongjiRole(snum, tscen[menu], battle_id) then
               begin
                 NewTalk(0, 200, -2, 0, 0, 0, 0, 1);
+               
                 Rrole[0].weizhi := -1;
                 where := 0;
                 resetpallet;
@@ -5282,6 +5312,7 @@ begin
                 Cy := Sy;
                 CurScene := tscen[menu];
                 where := 1;
+                
                 Rrole[0].weizhi := CurScene;
                 resetpallet;
                 instruct_14;
@@ -5354,6 +5385,7 @@ begin
               begin
                 NewTalk(0, 200, -2, 0, 0, 0, 0, 1);
                 where := 0;
+               
                 Rrole[0].weizhi := -1;
                 resetpallet;
                 instruct_14;
@@ -5400,6 +5432,7 @@ begin
                 Cy := Sy;
                 CurScene := tscen[menu];
                 where := 1;
+                
                 Rrole[0].weizhi := CurScene;
                 resetpallet;
                 instruct_14;
@@ -5514,6 +5547,7 @@ begin
       begin
         if (Rrole[i].MenPai = Rscene[snum].menpai) and (Rrole[i].weizhi = snum) then
         begin
+          
           Rrole[i].weizhi := n;
           Rrole[i].nweizhi := 14;
           Inc(Rrole[i].dtime, 5);
@@ -5571,16 +5605,19 @@ begin
       begin
         if Rrole[i].MenPai = mpnum2 then
         begin
+          Rrole_a[i].currentHP := Rrole_a[i].currentHP - Rrole[i].currentHP;
           Rrole[i].currentHP := 0;
           if (i >= 300) and (i < 500) then
           begin
             Rrole[i].HeadNum := -1;
+            Rrole_a[i].MenPai :=Rrole_a[i].MenPai -1 - Rrole[i].MenPai;
             Rrole[i].MenPai := -1;
           end
           else
           begin
             Rrole[i].nweizhi := 20;
             Rrole[i].dtime := 1000;
+            Rrole_a[i].currentHP := Rrole_a[i].currentHP - Rrole[i].currentHP;
             Rrole[i].currentHP := 0;
 
           end;
@@ -6190,6 +6227,7 @@ begin
       Rrole[rnum].shifu := shifu;
       Rmenpai[Rrole[shifu].MenPai].dizi := Rmenpai[Rrole[shifu].MenPai].dizi + 1;
       Dec(Rmenpai[Rrole[shifu].MenPai].aziyuan[3]);
+      Rrole_a[rnum].MenPai :=Rrole_a[rnum].MenPai + Rrole[shifu].MenPai - Rrole[rnum].MenPai;
       Rrole[rnum].MenPai := Rrole[shifu].MenPai;
       Rrole[rnum].weizhi := Rrole[shifu].weizhi;
       Rrole[rnum].nweizhi := -1;
@@ -6209,11 +6247,13 @@ end;
 procedure changejiaoqing(rnum, Count: integer);
 var
   str: WideString;
+  tmp:integer;
 begin
-
+  tmp:= Rrole[rnum].jiaoqing;
   Inc(Rrole[rnum].jiaoqing, Count);
   Rrole[rnum].jiaoqing := max(-100, Rrole[rnum].jiaoqing);
   Rrole[rnum].jiaoqing := min(100, Rrole[rnum].jiaoqing);
+  Rrole_a[rnum].jiaoqing:=Rrole_a[rnum].jiaoqing + Rrole[rnum].jiaoqing - tmp;
   {str:=gbktounicode(@Rrole[0].name)+'與'+gbktounicode(@Rrole[rnum].name)+'交情改變';
   drawshadowtext(@str[1], center_x - 12*length(str)-10 , 40, colcolor($5), colcolor($7));
   str := format('%4d', [count]);
@@ -6231,10 +6271,10 @@ var
   zjmvalue,mvalue:double;
 begin
   Result := jump2;
-  btnum := random(50) + 1;
+  btnum := random(70) + 1;
   if rnum > -1 then
   begin
-    if Battle(btnum, 1, rnum, -1) then
+    if Battle(btnum, 1, 0, -1,0,rnum) then
       Result := jump1;
   end
   else
@@ -6274,7 +6314,7 @@ begin
       k2:=k-k1+1;
     rrnum:=trnum[k1 + random(k2)];
 
-    if Battle(btnum, 1, rrnum, -1) then
+    if Battle(btnum, 1, 0, -1,0,rrnum) then
       Result := jump1;
   end;
 end;
@@ -6429,7 +6469,7 @@ end;
 
 procedure zjcjg;
 var
-  n, k, k1, k2, tm, ltmp, zhiwujc6, zhiwujc9, mpnum, Aptitude: integer;
+  n, k, k1, k2, tm, ltmp, zhiwujc6, zhiwujc9, mpnum, Aptitude,tmp0: integer;
   tmp, lv: array[0..29] of integer;
   str: WideString;
   key: boolean;
@@ -6456,7 +6496,7 @@ begin
   end;
   if (n > 0) then
   begin
-
+    tmp0:=Rrole[0].maglevel[tmp[tm]];
     tm := random(n);
     ltmp := Rrole[0].maglevel[tmp[tm]];
     Inc(Rrole[0].maglevel[tmp[tm]], round((Rrole[0].level * 3 + 30 - ltmp div 10) * (100 + random(100)) * (100 + zhiwujc6) / 50000));
@@ -6465,6 +6505,7 @@ begin
         (100 + zhiwujc6) / 50000));
     if Rrole[0].maglevel[tmp[tm]] > 999 then
       Rrole[0].maglevel[tmp[tm]] := 999;
+    Rrole_a[0].maglevel[tmp[tm]]:=Rrole_a[0].maglevel[tmp[tm]]+Rrole[0].maglevel[tmp[tm]]-tmp0;
     if ((Rrole[0].maglevel[tmp[tm]] div 100) > (ltmp div 100)) then
     begin
       str := gbktounicode(@Rrole[0].Name) + '的' + gbktounicode(@(Rmagic[Rrole[0].lmagic[tmp[tm]]].Name)) +
@@ -6475,6 +6516,7 @@ begin
           if Ritem[Rrole[0].PracticeBook].Magic = Rrole[0].lMagic[tmp[tm]] then
           begin
             instruct_32(Rrole[0].PracticeBook, 1);
+            Rrole_a[0].PracticeBook :=Rrole_a[0].PracticeBook -1 - Rrole[0].PracticeBook;
             Rrole[0].PracticeBook := -1;
           end;
     end
@@ -6644,7 +6686,7 @@ end;
 
 procedure zjbgs(day: integer);
 var
-  n, j, k, k1, k2, tm, ltmp, zhiwujc9, mpnum, Aptitude, tneigong: integer;
+  n, j, k, k1, k2, tm, ltmp, zhiwujc9, mpnum, Aptitude, tneigong,tmp0: integer;
   tmp, lv: array[0..29] of integer;
   str: WideString;
   key: boolean;
@@ -6671,12 +6713,14 @@ begin
     end;
     if n > 0 then
     begin
+      tmp0:=Rrole[0].maglevel[tmp[tm]];
       tm := random(n);
       ltmp := Rrole[0].maglevel[tmp[tm]];
       Inc(Rrole[0].maglevel[tmp[tm]], round((Rrole[0].level div 3 + 10) * (100 + random(100)) *
         (100 + zhiwujc9) / 100000));
       if Rrole[0].maglevel[tmp[tm]] div 100 > Rmagic[Rrole[0].lmagic[tmp[tm]]].MaxLevel then
         Rrole[0].maglevel[tmp[tm]] := Rmagic[Rrole[0].lmagic[tmp[tm]]].MaxLevel * 100;
+      Rrole_a[0].maglevel[tmp[tm]]:=Rrole_a[0].maglevel[tmp[tm]]+Rrole[0].maglevel[tmp[tm]]-tmp0;
       if ((Rrole[0].maglevel[tmp[tm]] div 100) > (ltmp div 100)) then
       begin
         EatOneItem(0, Rmagic[Rrole[0].lMagic[tmp[tm]]].miji, True);
@@ -6685,6 +6729,7 @@ begin
             if Ritem[Rrole[0].PracticeBook].Magic = Rrole[0].lMagic[tmp[tm]] then
             begin
               instruct_32(Rrole[0].PracticeBook, 1);
+              Rrole_a[0].PracticeBook :=Rrole_a[0].PracticeBook -1 - Rrole[0].PracticeBook;
               Rrole[0].PracticeBook := -1;
             end;
         str := gbktounicode(@Rrole[0].Name) + '的' + gbktounicode(@(Rmagic[Rrole[0].lmagic[tmp[tm]]].Name)) +
@@ -7687,7 +7732,7 @@ end;
 
 function aotobuildrole(mpnum, level, x1, x2: integer): integer;
 var
-  i, i1, j, k, k1, m1, readf, count1, count2, a1, a2: integer;
+  i, i1,i2, j, k, k1, m1, readf, count1, count2, a1, a2,tmp,r: integer;
   add1: array[0..2] of integer;
   add2: array[0..4] of integer;
   tmag: array of smallint;
@@ -7829,13 +7874,25 @@ begin
         Inc(k);
       end;
     end;
+    tmp:=1 + random(10);
+    Rrole_a[i].IncLife :=Rrole_a[i].IncLife + tmp - Rrole[i].IncLife;
+    Rrole[i].IncLife := tmp;
 
-    Rrole[i].IncLife := 1 + random(10);
-    Rrole[i].MaxHP := 50 + random(50);
-    Rrole[i].MaxMP := 50 + random(50);
+    tmp:=50 + random(50);
+    Rrole_a[i].MaxHP :=Rrole_a[i].MaxHP + tmp - Rrole[i].MaxHP;
+    Rrole[i].MaxHP := tmp;
+    tmp:=50 + random(50);
+    Rrole_a[i].MaxMP :=Rrole_a[i].MaxMP + tmp - Rrole[i].MaxMP;
+    Rrole[i].MaxMP := tmp;
+
+    Rrole_a[i].CurrentHP :=Rrole_a[i].CurrentHP + Rrole[i].MaxHP - Rrole[i].CurrentHP;
     Rrole[i].CurrentHP := Rrole[i].MaxHP;
+
+    Rrole_a[i].CurrentMP :=Rrole_a[i].CurrentMP + Rrole[i].MaxMP - Rrole[i].CurrentMP;
     Rrole[i].CurrentMP := Rrole[i].MaxMP;
-    Rrole[i].MPType := random(2);
+    tmp:=random(2);
+    Rrole_a[i].MPType :=Rrole_a[i].MPType + tmp - Rrole[i].MPType;
+    Rrole[i].MPType := tmp;
     for i1 := 0 to 2 do
     begin
       add1[i1] := 0;
@@ -7860,56 +7917,126 @@ begin
         add2[a2] := add2[a2] + 10;
       end;
     end;
-    Rrole[i].Attack := 21 + random(20) + add1[0];
-    Rrole[i].Speed := 21 + random(20) + add1[1];
-    Rrole[i].Defence := 21 + random(20 + add1[2]);
+    tmp:= 21 + random(20 + add1[0]);
+    Rrole_a[i].Attack :=Rrole_a[i].Attack + tmp - Rrole[i].Attack;
+    Rrole[i].Attack := tmp;
+
+    tmp:= 21 + random(20 + add1[1]);
+    Rrole_a[i].Speed :=Rrole_a[i].Speed + tmp - Rrole[i].Speed;
+    Rrole[i].Speed := tmp;
+
+    tmp:= 21 + random(20 + add1[2]);
+    Rrole_a[i].Defence :=Rrole_a[i].Defence + tmp - Rrole[i].Defence;
+    Rrole[i].Defence := tmp;
+
+    Rrole_a[i].Medcine :=Rrole_a[i].Medcine - Rrole[i].Medcine;
+    Rrole_a[i].UsePoi :=Rrole_a[i].UsePoi - Rrole[i].UsePoi;
+    Rrole_a[i].MedPoi :=Rrole_a[i].MedPoi - Rrole[i].MedPoi;
     Rrole[i].Medcine := 0;
     Rrole[i].UsePoi := 0;
     Rrole[i].MedPoi := 0;
-    Rrole[i].Fist := 21 + random(20) + add2[0];
-    Rrole[i].Sword := 21 + random(20 + add2[1]);
-    Rrole[i].Knife := 21 + random(20) + add2[2];
-    Rrole[i].Unusual := 21 + random(20) + add2[3];
-    Rrole[i].HidWeapon := 21 + random(20 + add2[4]);
-    Rrole[i].xiangxing := random(10);
-    Rrole[i].Aptitude := 1 + random(100);
-    Rrole[i].fuyuan := min(100, 100 - Rrole[i].Aptitude + random(11));
-    Rrole[i].Ethics := random(51) - 25 + (Rmenpai[mpnum].shane + 3) * 15;
-    Rrole[i].Ethics := max(0, Rrole[i].Ethics);
-    Rrole[i].Ethics := min(100, Rrole[i].Ethics);
-    Rrole[i].Repute := random(50) + 1;
+
+    tmp:= 21 + random(20 + add2[0]);
+    Rrole_a[i].Fist :=Rrole_a[i].Fist + tmp - Rrole[i].Fist;
+    Rrole[i].Fist := tmp;
+
+    tmp:= 21 + random(20 + add2[1]);
+    Rrole_a[i].Sword :=Rrole_a[i].Sword + tmp - Rrole[i].Sword;
+    Rrole[i].Sword := tmp;
+
+    tmp:= 21 + random(20 + add2[2]);
+    Rrole_a[i].Knife :=Rrole_a[i].Knife + tmp - Rrole[i].Knife;
+    Rrole[i].Knife := tmp;
+
+    tmp:= 21 + random(20 + add2[3]);
+    Rrole_a[i].Unusual :=Rrole_a[i].Unusual + tmp - Rrole[i].Unusual;
+    Rrole[i].Unusual := tmp;
+
+    tmp:= 21 + random(20 + add2[4]);
+    Rrole_a[i].HidWeapon :=Rrole_a[i].HidWeapon + tmp - Rrole[i].HidWeapon;
+    Rrole[i].HidWeapon := tmp;
+
+    tmp:= random(10);
+    Rrole_a[i].xiangxing :=Rrole_a[i].xiangxing + tmp - Rrole[i].xiangxing;
+    Rrole[i].xiangxing := tmp;
+
+    tmp:= 1 + random(100);
+    Rrole_a[i].Aptitude :=Rrole_a[i].Aptitude + tmp - Rrole[i].Aptitude;
+    Rrole[i].Aptitude := tmp;
+
+    tmp:= min(100, 100 - Rrole[i].Aptitude + random(11));
+    Rrole_a[i].fuyuan :=Rrole_a[i].fuyuan + tmp - Rrole[i].fuyuan;
+    Rrole[i].fuyuan := tmp;
+
+    tmp:= min(100,max(0,(random(51) - 25 + (Rmenpai[mpnum].shane + 3) * 15)));
+    Rrole_a[i].Ethics :=Rrole_a[i].Ethics + tmp - Rrole[i].Ethics;
+    Rrole[i].Ethics := tmp;
+
+    tmp:= random(50) + 1;
+    Rrole_a[i].Repute :=Rrole_a[i].Repute + tmp - Rrole[i].Repute;
+    Rrole[i].Repute := tmp;
+
     Rrole[i].level := level;
     Rrole[i].zhongcheng := 100;
     if mpnum = Rrole[0].menpai then
       Rrole[i].zhongcheng := min(100, 50 + getyouhao(i));
     Rrole[i].zhongcheng := min(100, max(0, Rrole[i].zhongcheng));
-    Rrole[i].ExpForBook := 1000 + 2 * random(Rmenpai[mpnum].ShengWang);
+
+    tmp:=1000 + 2 * random(Rmenpai[mpnum].ShengWang);
+    Rrole_a[i].ExpForBook :=Rrole_a[i].ExpForBook +tmp - Rrole[i].ExpForBook;
+    Rrole[i].ExpForBook := tmp;
+
     for i1 := 0 to 29 do
     begin
+      Rrole_a[i].LMagic[i1] := Rrole_a[i].LMagic[i1] - Rrole[i].LMagic[i1];
       Rrole[i].LMagic[i1] := 0;
+      Rrole_a[i].MagLevel[i1] := Rrole_a[i].MagLevel[i1] - Rrole[i].MagLevel[i1];
       Rrole[i].MagLevel[i1] := 0;
     end;
+    Rrole_a[I].PhyPower :=Rrole_a[I].PhyPower + MAX_PHYSICAL_POWER - Rrole[I].PhyPower;
+    Rrole[I].PhyPower := MAX_PHYSICAL_POWER;
+
+    Rrole_a[I].Hurt := Rrole_a[I].Hurt - Rrole[I].Hurt;
+    Rrole_a[I].Poision := Rrole_a[I].Poision - Rrole[I].Poision;
+    Rrole[I].Hurt := 0;
+    Rrole[I].Poision := 0;
     aotosetmagic(i);
     i1 := 1;
     while (i1 < level) do
     begin
-      Rrole[i].MaxHP := Rrole[i].MaxHP + (150 + 15 * random(Rrole[i].IncLife)) div 10;
-      if Rrole[i].MaxHP > MAX_HP then Rrole[i].MaxHP := MAX_HP;
-      Rrole[i].CurrentHP := Rrole[i].MaxHP;
+      r := random(Rrole[I].IncLife);
+      Rrole_a[I].MaxHP :=Rrole_a[I].MaxHP + (170 + 17 * r) div 10;
+      Rrole[I].MaxHP := Rrole[I].MaxHP + (170 + 17 * r) div 10;
+      if Rrole[I].MaxHP > MAX_HP then
+      begin
+        Rrole_a[I].MaxHP :=Rrole_a[I].MaxHP + MAX_HP - Rrole[I].MaxHP;
+        Rrole[I].MaxHP := MAX_HP;
+      end;
+      Rrole_a[I].CurrentHP :=Rrole_a[I].CurrentHP + Rrole[I].MaxHP - Rrole[I].CurrentHP;
+      Rrole[I].CurrentHP := Rrole[I].MaxHP;
+      Rrole_a[I].MaxMP := Rrole_a[I].MaxMP +(340 - 17 * r) div 10;
+      Rrole[I].MaxMP := Rrole[I].MaxMP + (340 - 17 * r) div 10;
 
-      Rrole[i].MaxMP := Rrole[i].MaxMP + (300 - 15 * random(Rrole[i].IncLife)) div 10;
-      if Rrole[i].MaxMP > MAX_MP then Rrole[i].MaxMP := MAX_MP;
-      Rrole[i].CurrentMP := Rrole[i].MaxMP;
+      if Rrole[I].MaxMP > MAX_MP then
+      begin
+        Rrole_a[I].MaxMP :=Rrole_a[I].MaxMP + MAX_MP - Rrole[I].MaxMP;
+        Rrole[I].MaxMP := MAX_MP;
+      end;
+      Rrole_a[I].CurrentMP :=Rrole_a[I].CurrentMP + Rrole[I].MaxMP - Rrole[I].CurrentMP;
+      Rrole[I].CurrentMP := Rrole[I].MaxMP;
 
-      Rrole[i].Attack := Rrole[i].Attack + Rrole[i].Level mod 2;
-      Rrole[i].Speed := Rrole[i].Speed + Rrole[i].Level mod 2;
-      Rrole[i].Defence := Rrole[i].Defence + Rrole[i].Level mod 2;
-
-      Rrole[i].PhyPower := MAX_PHYSICAL_POWER;
-      Rrole[i].Hurt := 0;
-      Rrole[i].Poision := 0;
-      for j := 43 to 54 do
-        Rrole[i].Data[j] := min(Rrole[i].Data[j], MaxProList[j]);
+      Rrole_a[I].Attack :=Rrole_a[I].Attack + 1;
+      Rrole_a[I].Speed :=Rrole_a[I].Speed + 1;
+      Rrole_a[I].Defence :=Rrole_a[I].Defence + 1;
+      Rrole[I].Attack := Rrole[I].Attack + 1;
+      Rrole[I].Speed := Rrole[I].Speed + 1;
+      Rrole[I].Defence := Rrole[I].Defence + 1;
+      for i2 := 43 to 54 do
+      begin
+        tmp:=Rrole[I].Data[i2];
+        Rrole[I].Data[i2] := min(Rrole[I].Data[i2], MaxProList[i2]);
+        Rrole_a[I].Data[i2]:= Rrole_a[I].Data[i2] + Rrole[I].Data[i2] - tmp;
+      end;
       Inc(i1);
     end;
     tmp1 := random(101);
@@ -8030,6 +8157,7 @@ var
   na2: array[0..9] of char;
   temp2: WideString;
 begin
+  x50[29000]:=rnum;
   if color = 0 then color := 28515;
   frame := 0;
 
@@ -9078,7 +9206,7 @@ begin
   zyname[7] := '異草';
   zyname[8] := '稀金';
   zyname[9] := '玄鐵';
-  display_imgFromSurface(SKILL_PIC, 0, 0); //缺图
+  display_imgFromSurface(DIZI_PIC, 0, 0); //缺图
   //showmessage(inttostr(y));
   m := min(maxshow, max0 + 1);
   DrawRectangle(x, y, w, m * 22 + 6, 0, ColColor(255), 30);
@@ -9932,6 +10060,7 @@ var
 begin
   if rnum >= 0 then
   begin
+    Rrole_a[rnum].exp := Rrole_a[rnum].exp + exp;
     Rrole[rnum].exp := Rrole[rnum].exp + exp;
 
     DrawRectangle(CENTER_X - 70, CENTER_Y - 150 - 1, 220, 24, 0, ColColor(0, 255), 30);
@@ -10317,52 +10446,28 @@ begin
   Genum := e_GetValue(3, key2, Genum);
   reX := e_GetValue(4, key2, reX);
   X50[rex] := -1;
-  if (rnum > 0) and (snum = 0) and (x = 0) and (y = 0) and (dtime = 0) then
+  if NOT(tryevent) and ((rnum > 0) and (snum = 0) and (x = 0) and (y = 0) and (dtime = 0)) then
   begin
-    for i := RccRole.Count - 1 downto 0 do
+    for i := TimeTrigger.Count - 1 downto 0 do
     begin
-      if RccRole.adds[i].rnum = rnum then
+      if TimeTrigger.adds[i].rnum = rnum then
       begin
-        instruct_3([RccRole.adds[i].snum, RccRole.adds[i].DNum, 0, -2, 0, 0, 0, 0, 0, 0, 0,
-          0, 0, 0, 0, 0, 0, 0, 0, 0]);
-        Rrole[RccRole.adds[i].rnum].lsweizhi := -1;
-        Rrole[RccRole.adds[i].rnum].lsnweizhi := -1;
-        Rrole[RccRole.adds[i].rnum].lsfangxiang := 0;
-        if Rrole[RccRole.adds[i].rnum].dtime < 1000 then
-          Rrole[RccRole.adds[i].rnum].dtime := 0;
-        for j := i to RccRole.Count - 2 do
-        begin
-          RccRole.adds[j].Rnum := RccRole.adds[j + 1].Rnum;
-          RccRole.adds[j].snum := RccRole.adds[j + 1].snum;
-          RccRole.adds[j].Dnum := RccRole.adds[j + 1].Dnum;
-          RccRole.adds[j].Dtime := RccRole.adds[j + 1].Dtime;
-        end;
-        setlength(RccRole.adds, RccRole.Count - 1);
-        Dec(RccRole.Count);
+        deltimetrigger(i);
         break;
       end;
     end;
     exit;
   end;
-  if (rnum = 0) and (snum >= 0) and (x >= 0) and (y >= 0) and (dtime = 0) and (enum1 = 0) and
-    (enum2 = 0) and (enum3 = 0) and (pic0 = 0) and (picE = 0) and (picB = 0) and (picD = 0) then
+  if NOT(tryevent) and ((rnum = 0) and (snum >= 0) and (x >= 0) and (y >= 0) and (dtime = 0) and (enum1 = 0) and
+    (enum2 = 0) and (enum3 = 0) and (pic0 = 0) and (picE = 0) and (picB = 0) and (picD = 0)) then
   begin
-    for i := RccRole.Count - 1 downto 0 do
+    for i := TimeTrigger.Count - 1 downto 0 do
     begin
-      if (RccRole.adds[i].Rnum = 0) and (RccRole.adds[i].snum = snum) then
+      if (TimeTrigger.adds[i].Rnum = 0) and (TimeTrigger.adds[i].snum = snum) then
       begin
-        if (Ddata[snum, RccRole.adds[i].DNum, 9] = x) and (Ddata[snum, RccRole.adds[i].DNum, 10] = y) then
+        if (Ddata[snum, TimeTrigger.adds[i].DNum, 9] = x) and (Ddata[snum, TimeTrigger.adds[i].DNum, 10] = y) then
         begin
-          instruct_3([snum, RccRole.adds[i].DNum, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-          for j := i to RccRole.Count - 2 do
-          begin
-            RccRole.adds[j].Rnum := RccRole.adds[j + 1].Rnum;
-            RccRole.adds[j].snum := RccRole.adds[j + 1].snum;
-            RccRole.adds[j].Dnum := RccRole.adds[j + 1].Dnum;
-            RccRole.adds[j].Dtime := RccRole.adds[j + 1].Dtime;
-          end;
-          setlength(RccRole.adds, RccRole.Count - 1);
-          Dec(RccRole.Count);
+          deltimetrigger(i);
           break;
         end;
       end;
@@ -10372,11 +10477,21 @@ begin
 
   if (snum < 0) or (x > 63) or (x < 0) or (y > 63) or (y < 0) or not (face in [0..3]) or
     (enum1 < 0) or (dtime < 0) or ((rnum > 0) and(Rrole[rnum].dtime > Ytime)) or (rnum < 0) then
+  begin
+    if tryevent then
+    begin
+      eventtag:=false;
+    end;
     exit;
+  end;
   for i := 200 to 399 do
   begin
     if Ddata[snum, i, 1] <= 0 then
     begin
+      if tryevent then
+      begin
+        exit;
+      end;
       Result := jump1;
       X50[rex] := i;
       if (pic0 <= 0) and (rnum > 0) then
@@ -10395,6 +10510,7 @@ begin
         dtime, Rtime, Jtime, act, Gtime, Genum]);
       if rnum > 0 then
       begin
+        Rrole[rnum].MRevent := -1;
         Rrole[rnum].dtime := Rrole[rnum].dtime + (btime - timetonum) + dtime;
         Rrole[rnum].lsweizhi := snum;
         Rrole[rnum].lsnweizhi := i;
@@ -10402,19 +10518,17 @@ begin
         if (Rrole[rnum].weizhi >= 0) and (Rrole[rnum].nweizhi >= 0) and (Rrole[rnum].MenPai <= 0) then
           xiugaievent(Rrole[rnum].weizhi, Rrole[rnum].nweizhi, 11, 1, 0);
       end;
-      Inc(RccRole.Count);
-      setlength(RccRole.adds, RccRole.Count);
-      RccRole.adds[RccRole.Count - 1].Rnum := rnum;
-      RccRole.adds[RccRole.Count - 1].snum := snum;
-      RccRole.adds[RccRole.Count - 1].DNum := i;
-      RccRole.adds[RccRole.Count - 1].Dtime := Btime + Dtime;
+      updatatimetrigger(-1,rnum,snum,i,Dtime,Btime,0,0,0,0,-1);
       break;
     end;
   end;
-
+  if (tryevent) and (result = jump2) then
+  begin
+    eventtag:=false;
+  end;
 end;
 
-procedure addrenwu(key, num, talknum, status, day: smallint);
+procedure addrenwutishi(key, num, talknum, status, day: smallint);
 var
   len: integer;
   fgrp, fidx: string;
@@ -10479,4 +10593,618 @@ begin
   xunchou.team[xunchou.num - 1]:=team;
 end;
 
+function pushstack(key,data:integer):boolean;
+var
+  i:integer;
+begin
+  result:=true;
+  data := e_GetValue(0, key, data);
+  if data < 0 then
+  begin
+    exit;
+  end;
+  if x50[27999] <= 999 then
+  begin
+    FOR I:= x50[27999] downto 1 do
+    begin
+      x50[27000 + i]:=x50[27000 + i - 1];
+    end;
+    x50[27000]:= data;
+    inc(x50[27999]);
+  end
+  else
+  begin
+    result:=false;
+  end;
+end;
+procedure popstack(key,resX:integer);
+var
+  i:integer;
+begin
+  resX := e_GetValue(0, key, resX);
+  if (x50[27999] > 0) then
+  begin
+    x50[resX]:= x50[27000];
+    for i:=0 to x50[27999] - 2 do
+    begin
+      x50[27000 + i]:= x50[27000 + i + 1];
+    end;
+    dec(x50[27999]);
+  end
+  else
+  begin
+    x50[resX]:= -1;
+  end;
+
+end;
+procedure fightmatch(key,mods,resAX,view:integer);
+var
+  i,j,j1,j2,x,len0,tmp,delaytime,btnum,rank,maxvictory,nowman:integer;
+  str:widestring;
+  rnums:array of smallint;
+  rnums1:Tfightrnum;
+  fight:Tnowfight;
+begin
+  mods :=e_GetValue(0, key, mods);
+  resAX :=e_GetValue(1, key, resAX);
+  view :=e_GetValue(2, key, view);
+  if x50[27999] < 2 then
+  begin
+    exit;
+  end;
+  rnums1.len:=x50[27999];
+  rnums1.liver:=rnums1.len;
+  if mods = 0 then //淘汰赛
+  begin
+    setlength(rnums, x50[27999]);
+    setlength(rnums1.rnum, x50[27999]);
+    setlength(rnums1.victory, x50[27999]);
+    setlength(rnums1.order, x50[27999]);
+    setlength(rnums1.rnumorder, x50[27999]);
+    len0:= rnums1.len;
+    for i:=0 to len0 - 1 do
+    begin
+      rnums[i]:=x50[27000 + i];
+    end;
+    for i:=0 to rnums1.len - 1 do
+    begin
+      tmp:=random(len0);
+      rnums1.rnum[i]:=rnums[tmp];
+      rnums1.victory[i]:= 0;
+      rnums1.order[i]:=i;
+      rnums1.rnumorder[i]:=i;
+      for j:= tmp to len0 - 2 do
+      begin
+        rnums[j]:=rnums[j + 1];
+      end;
+      dec(len0);
+      setlength(rnums,len0);
+    end;
+    rnums1.nowrounds:=1;
+    setlength(rnums1.blank,rnums1.nowrounds);
+    rnums1.blank[rnums1.nowrounds - 1].rounds:=rnums1.nowrounds;
+    rnums1.blank[rnums1.nowrounds - 1].count:=0;
+    showfightmatch1(rnums1,fight,0,0);
+    SDL_UpdateRect2(screen, 0, 0, screen.w, screen.h);
+    waitanykey;
+    while (rnums1.liver > 1) do
+    begin
+      setlength(rnums1.blank,rnums1.nowrounds);
+      rnums1.blank[rnums1.nowrounds - 1].rounds:=rnums1.nowrounds;
+      rnums1.blank[rnums1.nowrounds - 1].count:=0;
+      fight.fightrnum[0]:=-1;
+      fight.fightrnum[1]:=-1;
+      fight.offset[0]:=-1;
+      fight.offset[1]:=-1;
+      fight.ready:=0;
+      redraw;
+      for i:=0 to rnums1.len -1 do
+      begin
+        if (rnums1.order[i] < 0) then
+        begin
+          break;
+        end;
+        fight.fightrnum[fight.ready]:=rnums1.rnum[rnums1.order[i]];
+        fight.offset[fight.ready]:=rnums1.order[i];
+        inc(fight.ready);
+        if fight.ready = 2 then
+        begin
+          for j:=0 to 19 do
+          begin
+            redraw;
+            showfightmatch1(rnums1,fight,j,1);
+            SDL_UpdateRect2(screen, 0, 0, screen.w, screen.h);
+            if j <10 then
+            begin
+              delaytime:=4 - j div 3 ;
+            end
+            else
+            begin
+              delaytime:=j div 3 - 2;
+            end;
+            SDL_Delay(delaytime*(GameSpeed + 10));
+          end;
+          SDL_Delay(20 * (GameSpeed + 10));
+          btnum := random(70) + 1;
+          inc(rnums1.blank[rnums1.nowrounds - 1].count);
+          setlength(rnums1.blank[rnums1.nowrounds - 1].winner,rnums1.blank[rnums1.nowrounds - 1].count);
+          setlength(rnums1.blank[rnums1.nowrounds - 1].role,rnums1.blank[rnums1.nowrounds - 1].count);
+          rnums1.blank[rnums1.nowrounds - 1].role[rnums1.blank[rnums1.nowrounds - 1].count - 1][0]:=fight.offset[0];
+          rnums1.blank[rnums1.nowrounds - 1].role[rnums1.blank[rnums1.nowrounds - 1].count - 1][1]:=fight.offset[1];
+          if (view = 0) or ((fight.fightrnum[0] = 0) or (fight.fightrnum[1] = 0)) then
+          begin
+            if fight.fightrnum[1] = 0 then
+            begin
+              if battle(btnum,1,1,-1,fight.fightrnum[1],fight.fightrnum[0]) then
+              begin
+                rnums1.victory[fight.offset[0]]:= -1 * rnums1.nowrounds;
+                rnums1.victory[fight.offset[1]]:= rnums1.nowrounds;
+                rnums1.blank[rnums1.nowrounds - 1].winner[rnums1.blank[rnums1.nowrounds - 1].count - 1]:=1;
+              end
+              else
+              begin
+                rnums1.victory[fight.offset[0]]:= rnums1.nowrounds;
+                rnums1.victory[fight.offset[1]]:= -1 * rnums1.nowrounds;
+                rnums1.blank[rnums1.nowrounds - 1].winner[rnums1.blank[rnums1.nowrounds - 1].count - 1]:=0;
+              end;
+            end
+            else if battle(btnum,1,1,-1,fight.fightrnum[0],fight.fightrnum[1]) then
+            begin
+              rnums1.victory[fight.offset[0]]:= rnums1.nowrounds;
+              rnums1.victory[fight.offset[1]]:= -1 * rnums1.nowrounds;
+              rnums1.blank[rnums1.nowrounds - 1].winner[rnums1.blank[rnums1.nowrounds - 1].count - 1]:=0;
+            end
+            else
+            begin
+              rnums1.victory[fight.offset[0]]:= -1 * rnums1.nowrounds;
+              rnums1.victory[fight.offset[1]]:= rnums1.nowrounds;
+              rnums1.blank[rnums1.nowrounds - 1].winner[rnums1.blank[rnums1.nowrounds - 1].count - 1]:=1;
+            end;
+          end
+          else
+          begin
+            if AIVS(fight.fightrnum[0],fight.fightrnum[1]) then
+            begin
+              rnums1.victory[fight.offset[0]]:= rnums1.nowrounds;
+              rnums1.victory[fight.offset[1]]:= -1 * rnums1.nowrounds;
+              rnums1.blank[rnums1.nowrounds - 1].winner[rnums1.blank[rnums1.nowrounds - 1].count - 1]:=0;
+            end
+            else
+            begin
+              rnums1.victory[fight.offset[0]]:= -1 * rnums1.nowrounds;
+              rnums1.victory[fight.offset[1]]:= rnums1.nowrounds;
+              rnums1.blank[rnums1.nowrounds - 1].winner[rnums1.blank[rnums1.nowrounds - 1].count - 1]:=1;
+            end;
+          end;
+          dec(rnums1.liver);
+          fight.fightrnum[0]:=-1;
+          fight.fightrnum[1]:=-1;
+          fight.offset[0]:=-1;
+          fight.offset[1]:=-1;
+          fight.ready:=0;
+        end;
+      end;
+      if fight.ready = 1 then
+      begin
+        rnums1.victory[fight.offset[0]]:= rnums1.nowrounds;
+        fight.fightrnum[0]:=-1;
+        fight.offset[0]:=-1;
+        fight.ready:=0;
+      end;
+      len0:=0;
+      for i:=0 to rnums1.len -1 do
+      begin
+        rnums1.order[i]:=-1;
+        rnums1.rnumorder[i]:=-1;
+        if rnums1.victory[i] < 0 then
+        begin
+          continue;
+        end;
+        inc(len0);
+        setlength(rnums,len0);
+        rnums[len0 - 1]:=i;
+      end;
+      for i:=0 to len0 - 1 do
+      begin
+        tmp:=random(len0);
+        rnums1.order[i]:=rnums[tmp];
+        rnums1.rnumorder[rnums1.order[i]]:=i;
+        for j:= tmp to len0 - 2 do
+        begin
+          rnums[j]:=rnums[j + 1];
+        end;
+        dec(len0);
+        setlength(rnums,len0);
+      end;
+      redraw;
+      if rnums1.liver > 1 then
+      begin
+        showfightmatch1(rnums1,fight,0,2);
+        inc(rnums1.nowrounds);
+      end
+      else
+      begin
+        showfightmatch1(rnums1,fight,0,3);
+      end;
+      SDL_UpdateRect2(screen, 0, 0, screen.w, screen.h);
+      waitanykey;
+    end;
+    rank:=0;
+    for i:=0 to rnums1.len - 1 do
+    begin
+      if rnums1.victory[i] > 0 then
+      begin
+        maxvictory:=rnums1.victory[i];
+        x50[resAX + rank]:=rnums1.rnum[i];
+        inc(rank);
+        break;
+      end;
+    end;
+    i:=0;
+    nowman:=-1;
+    while (true) do
+    begin
+      if rnums1.victory[i] = (-1 * maxvictory ) then
+      begin
+        nowman:=i;
+        for j:= i + 1 to rnums1.len - 1 do
+        begin
+          if rnums1.victory[j] = (-1 * maxvictory)  then
+          begin
+            if AIVS(rnums1.rnum[nowman],rnums1.rnum[j]) then
+            begin
+              x50[resAX + rank]:=rnums1.rnum[nowman];
+              rnums1.victory[nowman]:= -1 * rnums1.victory[nowman];
+              nowman:=j;
+              inc(rank);
+            end
+            else
+            begin
+              x50[resAX + rank]:=rnums1.rnum[j];
+              rnums1.victory[j]:= -1 * rnums1.victory[j];
+              inc(rank);
+            end;
+          end;
+        end;
+        x50[resAX + rank]:=rnums1.rnum[nowman];
+        rnums1.victory[nowman]:= -1 * rnums1.victory[nowman];
+        nowman:=-1;
+        inc(rank);
+        dec(maxvictory);
+        i:=0;
+        if maxvictory <=0 then
+        begin
+          x50[resAX + rank]:=-9999;
+          break;
+        end;
+      end
+      else
+      begin
+        inc(i);
+      end;
+
+    end;
+  end;
+end;
+procedure showfightmatch1(rnums1:Tfightrnum;fight:Tnowfight;count,mods:integer);
+var
+  str,str1,str2:widestring;
+  x,i,j,xs,ys,col1,col2:integer;
+  offset:array[0..1] of smallint;
+begin
+  x:=0;
+  if rnums1.len < 6 then
+  begin
+    x:=(5 -((rnums1.len - 1) mod 5)) * 60;
+  end;
+  if count = 0 then
+  begin
+    str:='第';
+    str1:=inttostr(rnums1.nowrounds);
+    if mods = 2 then
+    begin
+      str2:='輪結束分組中，按任意鍵繼續';
+    end
+    else if mods = 3 then
+    begin
+      str:='比賽結束，優勝者是：';
+      str1:=' ';
+      for i:=0 to rnums1.len - 1 do
+      begin
+        if rnums1.victory[i] > 0 then
+        begin
+          str2:=gbktounicode(@Rrole[rnums1.rnum[i]].name);
+          break;
+        end;
+      end;
+    end
+    else
+      str2:='輪';
+    DrawRectangle(319 - (length(str)*20+length(str1)*10+length(str2)*20) div 2, 45, length(str)*20+length(str1)*10+length(str2)*20 + 2, 22, 0, ColColor(240), 100);
+    DrawShadowText(@str[1],300 - (length(str)*20+length(str1)*10+length(str2)*20) div 2,46,ColColor($5),ColColor($7));
+    DrawEngShadowText(@str1[1],310 - (length(str)*20+length(str1)*10+length(str2)*20) div 2 + length(str)*20,45,ColColor($13),ColColor($15));
+    DrawShadowText(@str2[1],300 - (length(str)*20+length(str1)*10+length(str2)*20) div 2 + length(str)*20 + length(str1)*10,
+     46,ColColor($5),ColColor($7));
+    str:='捉對廝殺';
+    DrawRectangle(270, 75, 100, 24, 0, ColColor(255), 30);
+    DrawShadowText(@str[1],260,77,ColColor($21),ColColor($23));
+    DrawRectangle(16 + x, 105, 610 - 2 * x, 10 + 26 * ((rnums1.len - 1) div 5 + 1), 0, ColColor(255), 30);
+    for i:=0 to rnums1.len - 1 do
+    begin
+      str:= gbktounicode(@Rrole[rnums1.rnum[i]].name);
+      if (mods < 2) and (rnums1.rnumorder[i] >= 0) then
+      begin
+        str1:= inttostr(rnums1.rnumorder[i] + 1);
+      end
+      else
+        str1:='--';
+      DrawRectangle(x + 30 + 122 * (i mod 5), 110 +2+ 26 *(i div 5), 22, 21, 0, ColColor(255), 30);
+      DrawEngShadowText(@str1[1],x + 30 + 122 * (i mod 5) - 5 * length(str1),
+       109 +3+ 26 *(i div 5),ColColor($5),ColColor($7));
+      if ((mods <> 1) and (rnums1.victory[i] >= 0)) or
+       ((mods = 1) and (rnums1.victory[i] >= 0) and (i <> fight.offset[0]) and (i <> fight.offset[1])) then
+      begin
+        DrawRectangle(x + 30 + 22 + 122 * (i mod 5), 110 +2+ 26 *(i div 5), 80, 22, 0, ColColor(255), 30);
+        DrawShadowText(@str[1],x + 30 + 22 + 122 * (i mod 5) - 20 + 40 - 9 * length(str),
+         110 +3+ 26 *(i div 5),18,ColColor($13),ColColor($15));
+      end
+      else if ((mods <> 1) and (rnums1.victory[i] < 0)) or
+       ((mods = 1) and (rnums1.victory[i] < 0) and (i <> fight.offset[0]) and (i <> fight.offset[1])) then
+      begin
+        DrawRectangle(x + 30 + 22 + 122 * (i mod 5), 110 +2+ 26 *(i div 5), 80, 22, 0, ColColor(112), 50);
+        DrawShadowText(@str[1],x + 30 + 22 + 122 * (i mod 5) - 20 + 40 - 9 * length(str),
+         110 +3+ 26 *(i div 5),18,ColColor(181),ColColor(183));
+      end;
+    end;
+    if (rnums1.nowrounds > 0) and (rnums1.blank[rnums1.nowrounds - 1].count > 0) then
+    begin
+      DrawRectangle(16 , 120 +26 * ((rnums1.len - 1) div 5 + 1), 610, 28 + 20 * ((rnums1.blank[rnums1.nowrounds - 1].count - 1) div 2 + 1),
+       0, ColColor(255), 30);
+      str:='第';
+      str1:=inttostr(rnums1.nowrounds);
+      str2:='輪比赛结果';
+      DrawShadowText(@str[1],300 - (length(str)*20+length(str1)*10+length(str2)*20) div 2,122 +26 * ((rnums1.len - 1) div 5 + 1),ColColor($5),ColColor($7));
+      DrawEngShadowText(@str1[1],310 - (length(str)*20+length(str1)*10+length(str2)*20) div 2 + length(str)*20,
+       121 +26 * ((rnums1.len - 1) div 5 + 1),ColColor($13),ColColor($15));
+      DrawShadowText(@str2[1],300 - (length(str)*20+length(str1)*10+length(str2)*20) div 2 + length(str)*20 + length(str1)*10,
+       122 +26 * ((rnums1.len - 1) div 5 + 1),ColColor($5),ColColor($7));
+      for i:=0 to rnums1.blank[rnums1.nowrounds - 1].count - 1 do
+      begin
+        for j:=0 to 1 do
+        begin
+          str:= gbktounicode(@Rrole[rnums1.rnum[rnums1.blank[rnums1.nowrounds - 1].role[i][j]]].name);
+          DrawShadowText(@str[1],21 + 24 + 300 * (i mod 2) + 150 *(j mod 2) ,122 + 24 + 26 * ((rnums1.len - 1) div 5 + 1) + 20 * (i div 2),18,ColColor($5),ColColor($7));
+          if rnums1.blank[rnums1.nowrounds - 1].winner[i] = j then
+          begin
+            str2:='勝';
+            col1:=52;
+            col2:=54;
+          end
+          else
+          begin
+            str2:='敗';
+            col1:=23;
+            col2:=25;
+          end;
+          DrawShadowText(@str2[1],21 + 300 * (i mod 2)+ 150 *(j mod 2),122 + 24 + 26 * ((rnums1.len - 1) div 5 + 1) + 20 * (i div 2),18,ColColor(col1),ColColor(col2));
+        end;
+        str1:='對戰';
+        DrawShadowText(@str1[1],21 + 104 + 300 * (i mod 2) + 150 *(j mod 2) ,122 + 24 + 26 * ((rnums1.len - 1) div 5 + 1) + 20 * (i div 2),18,ColColor(34),ColColor(36));
+      end;
+    end;
+  end;
+  if (mods = 1) then
+  begin
+    if count = 0 then
+    begin
+      savescreen(0,0,0,screen.w,screen.h,screen);
+    end
+    else
+    begin
+      reshowscreen(0);
+    end;
+    for i:=0 to 1 do
+    begin
+      xs:=0;
+      ys:=0;
+      str:= gbktounicode(@Rrole[rnums1.rnum[fight.offset[i]]].name);
+      ys:= (count + 1) * (76 - (112+ 26 *(fight.offset[i] div 5)) ) div 20;
+      if (i = 1) then
+      begin
+        xs:= (count + 1) * (170 + 220 - (x + 30 + 22 + 122 * (fight.offset[i] mod 5))) div 20;
+      end
+      else
+      begin
+        xs:= (count + 1) * (170 - (x + 30 + 22 + 122 * (fight.offset[i] mod 5))) div 20;
+      end;
+      if count = 19 then
+      begin
+        ys:=76 - (112+ 26 *(fight.offset[i] div 5));
+        if (i = 1) then
+        begin
+          xs:=170 + 220 - (x + 30 + 22 + 122 * (fight.offset[i] mod 5));
+        end
+        else
+        begin
+          xs:= 170 - (x + 30 + 22 + 122 * (fight.offset[i] mod 5));
+        end;
+      end;
+      DrawRectangle(x + 30 + 22 + 122 * (fight.offset[i] mod 5) + xs, 110 +2+ 26 *(fight.offset[i] div 5) + ys, 80, 22, 0, ColColor($28 + min(6,count div 3) ), 30);
+      DrawShadowText(@str[1],x + 30 + 22 + 122 * (fight.offset[i] mod 5) - 20 + 40 - 9 * length(str) + xs,
+       110 +3+ 26 *(fight.offset[i] div 5) + ys,18,ColColor($13),ColColor($15));
+    end;
+  end;
+end;
+procedure autosetrenwu(key,Renwunum, stime, xhtime, xhrandom,endtime,event,endcount: smallint);
+var
+  i:integer;
+begin
+  Renwunum :=e_GetValue(0, key, Renwunum);
+  stime :=e_GetValue(1, key, stime);
+  xhtime :=e_GetValue(2, key, xhtime);
+  xhrandom :=e_GetValue(3, key, xhrandom);
+  endtime :=e_GetValue(4, key, endtime);
+  if stime < 0 then
+  begin
+    stime:= timetonum - stime;
+  end;
+  if endtime < 0 then
+  begin
+    endtime:= timetonum - endtime;
+  end;
+  updatatimetrigger(renwunum,-1,-1,-1,0,stime,xhtime,xhrandom,endtime,1,Event);
+
+end;
+procedure tryrenwu(key,Renwunum, stime, xhtime, xhrandom,endtime,event,endcount: smallint);
+var
+  i,num:integer;
+begin
+  Renwunum :=e_GetValue(0, key, Renwunum);
+  stime :=e_GetValue(1, key, stime);
+  xhtime :=e_GetValue(2, key, xhtime);
+  xhrandom :=e_GetValue(3, key, xhrandom);
+  endtime :=e_GetValue(4, key, endtime);
+  event :=e_GetValue(5, key, event);
+  for i:=0 to TimeTrigger.Count - 1 do
+  begin
+    if TimeTrigger.adds[i].renwunum = renwunum then
+    begin
+      stime:=TimeTrigger.adds[i].stime;
+      xhtime:=TimeTrigger.adds[i].xhtime;
+      xhrandom:=TimeTrigger.adds[i].xhrandom;
+      endtime:=TimeTrigger.adds[i].endtime;
+      event:=TimeTrigger.adds[i].event;
+    end;
+  end;
+  if stime < 0 then
+  begin
+    stime:= timetonum - stime;
+  end;
+  if endtime < 0 then
+  begin
+    endtime:= timetonum - endtime;
+  end;
+  stime:=stime + xhtime + random(xhrandom);
+
+  EventEndCount:=endcount;
+  tryevent:=true;
+  updatatimetrigger(renwunum,-1,-1,-1,0,stime,xhtime,xhrandom,endtime,1,Event);
+
+end;
+procedure CHANGErenwu(key,Renwunum, stime, xhtime, xhrandom,endtime,event,endcount: smallint);
+var
+  i,num:integer;
+begin
+  Renwunum :=e_GetValue(0, key, Renwunum);
+  stime :=e_GetValue(1, key, stime);
+  xhtime :=e_GetValue(2, key, xhtime);
+  xhrandom :=e_GetValue(3, key, xhrandom);
+  endtime :=e_GetValue(4, key, endtime);
+  event :=e_GetValue(5, key, event);
+  if stime <= 0 then
+  begin
+    stime:= timetonum - stime;
+  end;
+  if endtime <= 0 then
+  begin
+    endtime:= timetonum - endtime;
+  end;
+
+  if ((endtime <> 0) and (stime > endtime)) or ((stime = 0) and (xhtime = 0) and (xhrandom = 0)) then
+  begin
+    for i:=0 to TimeTrigger.Count - 1 do
+    begin
+      if TimeTrigger.adds[i].renwunum = Renwunum then
+      begin
+        deltimetrigger(i);
+        break;
+      end;
+    end;
+  end
+  else
+  begin
+    updatatimetrigger(renwunum,-1,-1,-1,0,stime,xhtime,xhrandom,endtime,1,Event);
+  end;
+end;
+function updatatimetrigger(renwunum,Rnum,snum,DNum,Dtime,stime,xhtime,xhrandom,endtime,types,event:integer):integer;
+var
+  i:integer;
+begin
+  result:=-1;
+  if(renwunum >= 0) then
+  begin
+    for i:=0 to TimeTrigger.Count - 1 do
+    begin
+      if (TimeTrigger.adds[i].renwunum = renwunum) then
+      begin
+        TimeTrigger.adds[i].Rnum := rnum;
+        TimeTrigger.adds[i].snum := snum;
+        TimeTrigger.adds[i].DNum := DNum;
+        TimeTrigger.adds[i].Dtime := Dtime;
+        TimeTrigger.adds[i].stime := stime;
+        TimeTrigger.adds[i].xhtime := xhtime;
+        TimeTrigger.adds[i].xhrandom := xhrandom;
+        TimeTrigger.adds[i].endtime := endtime;
+        TimeTrigger.adds[i].types := types;
+        if event <> 0 then
+        begin
+          TimeTrigger.adds[i].event := event;
+        end;
+        result:=i;
+        exit;
+      end;
+    end;
+  end;
+  Inc(TimeTrigger.Count);
+  setlength(TimeTrigger.adds, TimeTrigger.Count);
+  TimeTrigger.adds[TimeTrigger.Count - 1].renwunum := renwunum;
+  TimeTrigger.adds[TimeTrigger.Count - 1].Rnum := rnum;
+  TimeTrigger.adds[TimeTrigger.Count - 1].snum := snum;
+  TimeTrigger.adds[TimeTrigger.Count - 1].DNum := DNum;
+  TimeTrigger.adds[TimeTrigger.Count - 1].Dtime := Dtime;
+  TimeTrigger.adds[TimeTrigger.Count - 1].stime := stime;
+  TimeTrigger.adds[TimeTrigger.Count - 1].xhtime := xhtime;
+  TimeTrigger.adds[TimeTrigger.Count - 1].xhrandom := xhrandom;
+  TimeTrigger.adds[TimeTrigger.Count - 1].endtime := endtime;
+  TimeTrigger.adds[TimeTrigger.Count - 1].types := types;
+  TimeTrigger.adds[TimeTrigger.Count - 1].event := event;
+  result:=TimeTrigger.Count - 1;
+end;
+
+procedure deltimetrigger(num:integer);
+var
+  n:integer;
+begin
+  if (TimeTrigger.adds[num].snum >= 0) and (TimeTrigger.adds[num].DNum >= 0) then
+  begin
+    instruct_3([TimeTrigger.adds[num].snum, TimeTrigger.adds[num].DNum, 0, -2, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    Ddata[TimeTrigger.adds[num].snum,TimeTrigger.adds[num].DNum,1]:=-1;
+  end;
+  if TimeTrigger.adds[num].rnum > 0 then
+  begin
+    Rrole[TimeTrigger.adds[num].rnum].lsweizhi := -1;
+    Rrole[TimeTrigger.adds[num].rnum].lsnweizhi := -1;
+    Rrole[TimeTrigger.adds[num].rnum].lsfangxiang := 0;
+    Rrole[TimeTrigger.adds[num].rnum].MRevent := -1;
+    if Rrole[TimeTrigger.adds[num].rnum].dtime < 1000 then
+      Rrole[TimeTrigger.adds[num].rnum].dtime := 0;
+  end;
+  for n := num to TimeTrigger.Count - 2 do
+  begin
+    TimeTrigger.adds[n].renwunum := TimeTrigger.adds[n + 1].renwunum;
+    TimeTrigger.adds[n].Rnum := TimeTrigger.adds[n + 1].Rnum;
+    TimeTrigger.adds[n].snum := TimeTrigger.adds[n + 1].snum;
+    TimeTrigger.adds[n].Dnum := TimeTrigger.adds[n + 1].Dnum;
+    TimeTrigger.adds[n].Dtime := TimeTrigger.adds[n + 1].Dtime;
+    TimeTrigger.adds[n].stime := TimeTrigger.adds[n + 1].stime;
+    TimeTrigger.adds[n].xhtime := TimeTrigger.adds[n + 1].xhtime;
+    TimeTrigger.adds[n].xhrandom := TimeTrigger.adds[n + 1].xhrandom;
+    TimeTrigger.adds[n].endtime := TimeTrigger.adds[n + 1].endtime;
+    TimeTrigger.adds[n].types := TimeTrigger.adds[n + 1].types;
+    TimeTrigger.adds[n].event := TimeTrigger.adds[n + 1].event;
+  end;
+  setlength(TimeTrigger.adds, TimeTrigger.Count - 1);
+  Dec(TimeTrigger.Count);
+end;
 end.

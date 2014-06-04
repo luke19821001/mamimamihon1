@@ -1,7 +1,7 @@
 program In_stories;
 
 //{$APPTYPE GUI}
-//{$APPTYPE console}
+{$APPTYPE console}
 
 uses
   Forms,
@@ -24,7 +24,8 @@ uses
   gl in 'lib\gl.pas',
   glext in 'lib\glext.pas',
   moduleloader in 'lib\moduleloader.pas',
-  lua52 in 'lib\lua52.pas';
+  lua52 in 'lib\lua52.pas',
+  MD5 in 'MD5.pas';
 
 //{$R kys_promise.res}
 {$R *.res}
@@ -34,6 +35,7 @@ begin
   //alpplication..Create(kysw).Enabled;
   //form1.Show;
   Application.Initialize;
+  //Application.Run;
   Run;
 
 end.
